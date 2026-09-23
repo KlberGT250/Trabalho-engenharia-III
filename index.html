@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./Assets/css/stayle.css">
+    <link rel="icon" href="./IMG/egas%20(6).png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Fresh Food</title>
+</head>
+<body>
+    <div class="mobile-shell-overlay" aria-hidden="true"></div>
+
+    <div class="app-shell">
+        <aside class="sidebar sidebar-left" aria-label="Sidebar da esquerda">
+            <div class="sidebar-left-body">
+                <div class="project-brand">
+                    <img src="./IMG/egas%20(6).png" alt="Logo Fresh Food" class="project-logo">
+                    <h2>Fresh Food</h2>
+                    <p>Detecção de frescor em tempo real</p>
+                </div>
+
+                <div class="detected-header">
+                    <div id="rsEmpty" class="state-panel state-empty">
+                        <h3>Fruta detectada</h3>
+                        <img id="detected-emoji-empty" class="detected-emoji neutral" src="./IMG/egas%20(4).png" alt="Nenhuma fruta selecionada">
+                        <div class="detected-fruit-name">Nenhuma fruta</div>
+                        <div class="confidence-badge">0%</div>
+                    </div>
+
+                    <div id="rsFruit" class="state-panel state-filled" hidden>
+                        <h3>Fruta detectada</h3>
+                        <img id="detected-emoji-filled" class="detected-emoji" src="./IMG/egas%20(3).png" alt="Fruta detectada">
+                        <div id="detected-fruit-name-filled" class="detected-fruit-name">Nenhuma fruta</div>
+                        <div id="confidence-badge-filled" class="confidence-badge">0%</div>
+                    </div>
+                </div>
+
+                <div class="status-block">
+                    <span id="status-badge" class="status-badge neutral">Aguardando</span>
+                    <p id="freshness-recommendation">Nenhuma fruta detectada ainda</p>
+                </div>
+
+                <div class="nutrition-block">
+                    <h4>Valores nutricionais (por 100g)</h4>
+                    <ul id="nutrition-list" class="nutrition-list"></ul>
+                </div>
+            </div>
+        </aside>
+
+        <main id="main" class="main-content">
+            <section class="hero-panel" id="sobre">
+                <div class="detection-section" id="testar" aria-labelledby="detection-title">
+                    <span class="section-badge badge-highlight">Detecção em tempo real</span>
+                    <h2 id="detection-title">Selecione a fruta e aponte a câmera</h2>
+
+                    <div class="camera-card">
+                        <div class="camera-frame">
+                            <video id="camera-feed" autoplay muted playsinline aria-label="Imagem da câmera"></video>
+                            <canvas id="detection-canvas" aria-hidden="true"></canvas>
+                            <div id="camera-lock" class="camera-lock">
+                                <div id="camera-message" class="camera-message">Selecione uma fruta para começar</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fruit-selector" role="group" aria-label="Selecione uma fruta">
+                        <button class="fruit-option" type="button" data-fruit="banana" aria-pressed="false">
+                            <img src="./IMG/egas%20(7).png" alt="Banana" aria-hidden="true"> Banana
+                        </button>
+                        <button class="fruit-option" type="button" data-fruit="apple" aria-pressed="false">
+                            <img src="./IMG/egas%20(3).png" alt="Maçã" aria-hidden="true"> Maçã
+                        </button>
+                        <button class="fruit-option" type="button" data-fruit="orange" aria-pressed="false">
+                            <img src="./IMG/egas%20(5).png" alt="Laranja" aria-hidden="true"> Laranja
+                        </button>
+                    </div>
+
+                    <section class="detection-result" aria-live="polite" aria-label="Resultado da detecção">
+                        <div>
+                            <span class="result-label">Fruta detectada</span>
+                            <strong id="detected-fruit">Aguardando seleção</strong>
+                        </div>
+                        <div>
+                            <span class="result-label">Status</span>
+                            <strong id="freshness-status" class="status-fresh">Aguardando</strong>
+                        </div>
+                        <div class="confidence-result">
+                            <div class="confidence-heading">
+                                <span class="result-label">Confiança</span>
+                                <strong id="confidence-value">0%</strong>
+                            </div>
+                            <div class="confidence-track" role="progressbar" aria-label="Confiança da detecção" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                <span id="confidence-bar"></span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="nutrition-block nutrition-block-mobile">
+                        <h4>Valores nutricionais (por 100g)</h4>
+                        <ul id="nutrition-list-mobile" class="nutrition-list"></ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
+    <script src="./Js/escript.js"></script>
+</body>
+</html>
