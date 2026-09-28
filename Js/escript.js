@@ -101,27 +101,59 @@ const statusStates = {
 };
 
 // ---------------------------------------------------------------
-// Análise de frescor por cor (HSV)
-// Perfis calibrados com o dataset do Kaggle (testar_frescor.py).
-// "vibrante" = cor viva da fruta fresca; "marrom" = manchas escuras.
+// Análise de frescor
+// 1) Pega só a fruta: a caixa do COCO-SSD é reduzida para 160x160 e
+//    usamos uma área oval no centro (os cantos costumam ser fundo).
+// 2) Mede 8 características da casca: cor viva, manchas marrons, mofo
+//    (partes acinzentadas/esbranquiçadas), partes escuras, cor apagada,
+//    saturação média, brilho médio e textura (casca lisa ou enrugada).
+// 3) Um classificador de regressão logística (um por fruta) transforma
+//    essas medidas na chance de a fruta estar estragada.
+// Treinado com o dataset "Fruits fresh and rotten for classification"
+// (Kaggle). Separando por foto original, acertou 96% em 498 fotos
+// que não foram usadas no treino (antes: 80% com a fórmula antiga).
+// O script de treino está em Docs/treino/.
 // ---------------------------------------------------------------
-const PERFIS = {
+
+// Faixas de "cor viva" de cada fruta (matiz em graus, saturação e brilho mínimos)
+const CORES_VIVAS = {
+	banana: { hue: [[35, 100]], satMin: 0.35, valMin: 0.35 },
+	orange: { hue: [[20, 45]], satMin: 0.4, valMin: 0.35 },
+	apple: { hue: [[0, 15], [345, 360], [70, 130]], satMin: 0.35, valMin: 0.35 },
+};
+
+// Números do classificador (gerados por Docs/treino/treinar.py)
+// Ordem: corViva, marrom, mofo, escuro, apagado, saturacao, brilho, textura
+const MODELO = {
 	banana: {
-		vibranteHue: [[35, 100]], vibranteSatMin: 0.35, vibranteValMin: 0.35,
-		marromHue: [[0, 45], [340, 360]], marromValMax: 0.45, marromSatMax: 0.55,
-	},
-	orange: {
-		vibranteHue: [[20, 45]], vibranteSatMin: 0.4, vibranteValMin: 0.35,
-		marromHue: [[0, 20], [45, 60]], marromValMax: 0.4, marromSatMax: 0.55,
+		media: [0.503528, 0.15682, 0.170481, 0.034416, 0.134755, 0.441454, 0.724046, 0.052189],
+		desvio: [0.38716, 0.227486, 0.189464, 0.070657, 0.146604, 0.14923, 0.216871, 0.031951],
+		pesos: [-1.1291, 1.1165, 0.6038, 0.2808, 0.3335, -0.1931, -1.1012, 0.854],
+		base: -0.6002,
 	},
 	apple: {
-		vibranteHue: [[0, 15], [345, 360], [70, 130]], vibranteSatMin: 0.35, vibranteValMin: 0.35,
-		marromHue: [[20, 50]], marromValMax: 0.4, marromSatMax: 0.55,
+		media: [0.425647, 0.067909, 0.056719, 0.004806, 0.444919, 0.559031, 0.731727, 0.038491],
+		desvio: [0.335319, 0.10498, 0.053459, 0.024619, 0.313567, 0.089281, 0.103427, 0.015167],
+		pesos: [-1.4271, 3.1222, -0.1261, -0.2484, 0.5218, -0.0942, 1.9114, 2.9038],
+		base: 1.2851,
+	},
+	orange: {
+		media: [0.642553, 0.017715, 0.117003, 0.003202, 0.219527, 0.599116, 0.852287, 0.027237],
+		desvio: [0.279602, 0.047545, 0.169605, 0.008914, 0.188098, 0.1382, 0.090561, 0.015025],
+		pesos: [-0.7512, 2.0641, 0.8453, 0.0658, -0.1704, -2.2292, 1.3734, 0.8003],
+		base: -0.6181,
 	},
 };
 
-// Recortes usados na análise da foto (a média deles deixa o resultado mais estável)
-const CROP_SIZES = [0.6, 0.72, 0.84];
+// Textura a partir da qual a casca é considerada irregular (meio-termo entre fresca e estragada)
+const TEXTURA_IRREGULAR = { banana: 0.058, apple: 0.037, orange: 0.031 };
+
+// Chance de estar estragada: abaixo de 40% = Fresco, acima de 70% = Passado
+const CENTROS_ESTADO = { fresco: 0.25, moderado: 0.55, passado: 0.85 };
+// Tamanho da imagem analisada (igual ao usado no treino)
+const LADO_ANALISE = 160;
+// Tamanho da área oval em relação à caixa
+const OVAL = 0.9;
 // Maior lado da foto analisada (fotos de celular são enormes e deixariam tudo lento)
 const MAX_PHOTO_SIDE = 1280;
 // Quantas leituras sem achar a fruta antes de limpar o resultado
@@ -129,8 +161,8 @@ const MAX_MISSES = 3;
 // Limites de luz: abaixo ou acima disso o resultado não é confiável
 const LIGHT_MIN = 0.22;
 const LIGHT_MAX = 0.88;
-// Cor usada para pintar as manchas por cima da imagem (RGBA)
-const SPOT_COLOR = [255, 64, 64, 170];
+// Cor usada para pintar os defeitos por cima da imagem (RGBA)
+const SPOT_COLOR = [255, 64, 64, 115];
 
 const statusBadge = document.querySelector("#status-badge");
 const recommendationText = document.querySelector("#freshness-recommendation");
@@ -184,117 +216,170 @@ function rgbToHsv(r, g, b) {
 	return [h, s, max];
 }
 
-// Recebe os pixels da fruta e devolve:
-// - a porcentagem de fresco/moderado/passado
-// - quanto da casca tem cor viva, manchas e partes opacas (o "motivo")
-// - o brilho médio (para avisar se a luz está ruim)
-// - uma máscara com as manchas, para desenhar por cima do vídeo
-function computeFreshness(imageData, perfil) {
+// Canvas pequeno onde a fruta é reduzida para 160x160 antes da análise
+const analysisCanvas = document.createElement("canvas");
+analysisCanvas.width = LADO_ANALISE;
+analysisCanvas.height = LADO_ANALISE;
+const analysisContext = analysisCanvas.getContext("2d", { willReadFrequently: true });
+
+// Reduz a região da fruta para 160x160 em etapas (metade por vez),
+// para ficar parecido com a redução feita no treino
+function shrinkRegion(bbox) {
+	const [x, y, w, h] = bbox.map(Math.round);
+	let source = photoCanvas;
+	let sx = Math.max(0, x);
+	let sy = Math.max(0, y);
+	let sw = Math.max(1, Math.min(photoCanvas.width - sx, w));
+	let sh = Math.max(1, Math.min(photoCanvas.height - sy, h));
+
+	while (sw > LADO_ANALISE * 2 && sh > LADO_ANALISE * 2) {
+		const step = document.createElement("canvas");
+		step.width = Math.round(sw / 2);
+		step.height = Math.round(sh / 2);
+		const stepContext = step.getContext("2d");
+		stepContext.imageSmoothingQuality = "high";
+		stepContext.drawImage(source, sx, sy, sw, sh, 0, 0, step.width, step.height);
+		source = step;
+		sx = 0;
+		sy = 0;
+		sw = step.width;
+		sh = step.height;
+	}
+
+	analysisContext.imageSmoothingQuality = "high";
+	analysisContext.clearRect(0, 0, LADO_ANALISE, LADO_ANALISE);
+	analysisContext.drawImage(source, sx, sy, sw, sh, 0, 0, LADO_ANALISE, LADO_ANALISE);
+	return analysisContext.getImageData(0, 0, LADO_ANALISE, LADO_ANALISE);
+}
+
+// Mede as 8 características da casca dentro da área oval
+// e devolve também uma máscara com os defeitos (para desenhar na foto)
+function measureFruit(imageData, fruitKey) {
+	const cor = CORES_VIVAS[fruitKey];
+	const N = LADO_ANALISE;
 	const data = imageData.data;
-	const mask = new ImageData(imageData.width, imageData.height);
-	let total = 0;
-	let vibrante = 0;
-	let marrom = 0;
-	let opaco = 0;
-	let brightnessSum = 0;
-	let rawBrightnessSum = 0;
+	const hue = new Float32Array(N * N);
+	const sat = new Float32Array(N * N);
+	const val = new Float32Array(N * N);
+	for (let i = 0; i < N * N; i++) {
+		const [h, s, v] = rgbToHsv(data[i * 4], data[i * 4 + 1], data[i * 4 + 2]);
+		hue[i] = h;
+		sat[i] = s;
+		val[i] = v;
+	}
 
-	for (let i = 0; i < data.length; i += 4) {
-		const [h, s, v] = rgbToHsv(data[i], data[i + 1], data[i + 2]);
-		rawBrightnessSum += v;
+	const mask = new ImageData(N, N);
+	const c = (N - 1) / 2;
+	const r = (N / 2) * OVAL;
+	const count = { viva: 0, marrom: 0, mofo: 0, escuro: 0, apagado: 0 };
+	let n = 0;
+	let satSum = 0;
+	let valSum = 0;
+	let texSum = 0;
+	let rawValSum = 0;
+	let rawCount = 0;
 
-		// Pixel quase preto: sombra ou borda, não mancha. Ignora.
-		if (v < 0.06) continue;
+	for (let y = 0; y < N; y++) {
+		for (let x = 0; x < N; x++) {
+			if ((x - c) ** 2 + (y - c) ** 2 > r * r) continue;
+			const i = y * N + x;
+			const h = hue[i];
+			const s = sat[i];
+			const v = val[i];
+			rawValSum += v;
+			rawCount++;
 
-		total++;
-		brightnessSum += v;
+			// Fundo branco ou reflexo de luz, e pixels quase pretos: fora da conta
+			if ((v > 0.93 && s < 0.08) || v < 0.06) continue;
+			n++;
+			satSum += s;
+			valSum += v;
+			// Textura: diferença de brilho para o vizinho da direita e o de baixo
+			if (x < N - 1) texSum += Math.abs(val[i + 1] - v);
+			if (y < N - 1) texSum += Math.abs(val[i + N] - v);
 
-		const isVibrante = inHueRanges(h, perfil.vibranteHue) && s > perfil.vibranteSatMin && v > perfil.vibranteValMin;
-		const isMarrom = !isVibrante && inHueRanges(h, perfil.marromHue) && v < perfil.marromValMax && s < perfil.marromSatMax;
+			const isViva = inHueRanges(h, cor.hue) && s > cor.satMin && v > cor.valMin;
+			let defeito = false;
+			if (isViva) count.viva++;
+			else if (inHueRanges(h, [[0, 50], [340, 360]]) && s >= 0.2 && v < 0.55) { count.marrom++; defeito = true; }
+			else if (s < 0.2 && v >= 0.3) { count.mofo++; defeito = true; }
+			else if (v < 0.25) { count.escuro++; defeito = true; }
+			else count.apagado++;
 
-		if (isVibrante) {
-			vibrante++;
-		} else if (isMarrom) {
-			marrom++;
-			mask.data[i] = SPOT_COLOR[0];
-			mask.data[i + 1] = SPOT_COLOR[1];
-			mask.data[i + 2] = SPOT_COLOR[2];
-			mask.data[i + 3] = SPOT_COLOR[3];
-		} else if (s < 0.3 || v < 0.3) {
-			opaco++;
+			if (defeito) {
+				mask.data[i * 4] = SPOT_COLOR[0];
+				mask.data[i * 4 + 1] = SPOT_COLOR[1];
+				mask.data[i * 4 + 2] = SPOT_COLOR[2];
+				mask.data[i * 4 + 3] = SPOT_COLOR[3];
+			}
 		}
 	}
 
-	const pixelCount = data.length / 4 || 1;
-	if (total === 0) total = 1;
-
-	const pVibrante = vibrante / total;
-	const pMarrom = marrom / total;
-	const pOpaco = opaco / total;
-	const avgBrightness = brightnessSum / total;
-
-	let freshScore = (pVibrante * 100) - (pMarrom * 90) - (pOpaco * 40) + (avgBrightness * 15);
-	freshScore = Math.max(0, Math.min(100, freshScore + 35));
-	const staleScore = Math.max(0, Math.min(100, (pMarrom * 130 + pOpaco * 60) - (pVibrante * 20)));
-	const modScore = Math.max(0, 100 - freshScore - staleScore);
-
-	const sum = freshScore + modScore + staleScore || 1;
+	const total = Math.max(1, n);
 	return {
-		fresco: (freshScore / sum) * 100,
-		moderado: (modScore / sum) * 100,
-		passado: (staleScore / sum) * 100,
-		pVibrante,
-		pMarrom,
-		pOpaco,
-		brightness: rawBrightnessSum / pixelCount,
+		features: [
+			count.viva / total,
+			count.marrom / total,
+			count.mofo / total,
+			count.escuro / total,
+			count.apagado / total,
+			n ? satSum / n : 0,
+			n ? valSum / n : 0,
+			n ? texSum / n : 0,
+		],
+		brightness: rawCount ? rawValSum / rawCount : 0,
 		mask,
 	};
 }
-// Analisa um recorte do centro da caixa que o COCO-SSD achou.
-// "size" é quanto da caixa entra no recorte (0.72 = 72%), para pegar menos fundo.
-function analyzeRegion(fruitKey, bbox, size) {
-	const perfil = PERFIS[fruitKey];
-	const pw = photoCanvas.width;
-	const ph = photoCanvas.height;
-	if (!perfil || !pw || !ph) return null;
 
-	const margin = (1 - size) / 2;
-	const [x, y, w, h] = bbox;
-	const cropX = Math.max(0, Math.round(x + w * margin));
-	const cropY = Math.max(0, Math.round(y + h * margin));
-	const cropW = Math.max(1, Math.min(pw - cropX, Math.round(w * size)));
-	const cropH = Math.max(1, Math.min(ph - cropY, Math.round(h * size)));
-
-	const imageData = photoContext.getImageData(cropX, cropY, cropW, cropH);
-	const result = computeFreshness(imageData, perfil);
-	result.cropX = cropX;
-	result.cropY = cropY;
-	return result;
+// Regressão logística: transforma as medidas na chance (0 a 1) de estar estragada
+function rottenChance(features, fruitKey) {
+	const m = MODELO[fruitKey];
+	let z = m.base;
+	features.forEach((f, k) => {
+		z += m.pesos[k] * ((f - m.media[k]) / m.desvio[k]);
+	});
+	return 1 / (1 + Math.exp(-z));
 }
 
-// Média de várias análises e escolha do estado vencedor
-function averageFreshness(results) {
-	const n = results.length;
-	const avg = { fresco: 0, moderado: 0, passado: 0, pVibrante: 0, pMarrom: 0, pOpaco: 0, brightness: 0 };
-	results.forEach((r) => {
-		Object.keys(avg).forEach((k) => {
-			avg[k] += r[k] / n;
-		});
+// Transforma a chance de estar estragada nas três barras (somam 100%)
+// e escolhe o estado. Os limites ficam em 40% e 70%.
+function freshnessFromChance(chance) {
+	const peso = {};
+	let soma = 0;
+	Object.entries(CENTROS_ESTADO).forEach(([key, centro]) => {
+		peso[key] = Math.exp(-((chance - centro) ** 2) / (2 * 0.12 ** 2));
+		soma += peso[key];
+	});
+	const avg = {};
+	Object.keys(peso).forEach((key) => {
+		avg[key] = (peso[key] / soma) * 100;
 	});
 
-	let key = "moderado";
-	if (avg.fresco >= avg.moderado && avg.fresco >= avg.passado) key = "fresco";
-	else if (avg.passado >= avg.fresco && avg.passado >= avg.moderado) key = "passado";
+	const key = chance < 0.4 ? "fresco" : chance > 0.7 ? "passado" : "moderado";
+	return { key, state: statusStates[key], percent: Math.round(avg[key]), avg, chance };
+}
 
-	return { key, state: statusStates[key], percent: Math.round(avg[key]), avg };
+// Analisa a fruta dentro da caixa encontrada pelo COCO-SSD
+function analyzeFruit(fruitKey, bbox) {
+	const measured = measureFruit(shrinkRegion(bbox), fruitKey);
+	const chance = rottenChance(measured.features, fruitKey);
+	const freshness = freshnessFromChance(chance);
+	freshness.features = measured.features;
+	freshness.fruitKey = fruitKey;
+	freshness.avg.brightness = measured.brightness;
+	return { freshness, mask: measured.mask };
 }
 
 // Explica em linguagem simples por que o sistema chegou no resultado
-function buildReason(avg) {
-	const viva = Math.round(avg.pVibrante * 100);
-	const manchas = Math.round(avg.pMarrom * 100);
-	const opaca = Math.round(avg.pOpaco * 100);
-	return `${viva}% da casca com cor viva, ${manchas}% com manchas escuras e ${opaca}% com cor apagada.`;
+function buildReason(freshness) {
+	const [viva, marrom, mofo, escuro, , , , textura] = freshness.features;
+	const pct = (x) => Math.round(x * 100);
+	const partes = [`${pct(viva)}% da casca com cor viva`];
+	partes.push(`${pct(marrom + escuro)}% com manchas escuras`);
+	partes.push(`${pct(mofo)}% acinzentada ou esbranquiçada`);
+	const casca = textura > TEXTURA_IRREGULAR[freshness.fruitKey] ? "casca irregular" : "casca lisa";
+	return `${partes.join(", ")} e ${casca}. Chance de estar estragada: ${pct(freshness.chance)}%.`;
 }
 
 function lightMessage(brightness) {
@@ -368,9 +453,9 @@ function renderFruitState(fruitKey, freshness, detectionConfidence) {
 	detectedFruit.textContent = fruitName;
 	freshnessStatus.textContent = state.label;
 	freshnessStatus.className = `status-fresh ${state.className}`;
-	freshnessReason.textContent = buildReason(avg);
+	freshnessReason.textContent = buildReason(freshness);
 	setClassBars(avg);
-	setConfidence(detectionConfidence);
+	setConfidence(detectionConfidence ?? 0);
 	fillNutrition(fruitKey);
 }
 
@@ -449,15 +534,23 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 // Camada com a caixa verde e as manchas pintadas, no tamanho da foto
-function buildOverlay(prediction, analysis) {
+function buildOverlay(prediction, mask) {
 	const overlay = document.createElement("canvas");
 	overlay.width = photoCanvas.width;
 	overlay.height = photoCanvas.height;
 	const ctx = overlay.getContext("2d");
-	if (analysis?.mask) {
-		ctx.putImageData(analysis.mask, analysis.cropX, analysis.cropY);
-	}
 	const [x, y, w, h] = prediction.bbox;
+
+	// A máscara de defeitos (160x160) é esticada de volta para o tamanho da fruta
+	if (mask) {
+		const maskCanvas = document.createElement("canvas");
+		maskCanvas.width = mask.width;
+		maskCanvas.height = mask.height;
+		maskCanvas.getContext("2d").putImageData(mask, 0, 0);
+		ctx.imageSmoothingEnabled = false;
+		ctx.drawImage(maskCanvas, x, y, w, h);
+	}
+
 	ctx.strokeStyle = CARD_COLORS.accent;
 	ctx.lineWidth = Math.max(3, Math.round(photoCanvas.width / 250));
 	ctx.strokeRect(x, y, w, h);
@@ -556,7 +649,7 @@ function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning 
 	ctx.textAlign = "left";
 	ctx.fillStyle = CARD_COLORS.soft;
 	ctx.font = font(28);
-	y += drawWrappedText(ctx, buildReason(avg), PAD, y, W - PAD * 2, 40);
+	y += drawWrappedText(ctx, buildReason(freshness), PAD, y, W - PAD * 2, 40);
 
 	y += 20;
 	ctx.fillStyle = CARD_COLORS.text;
@@ -567,13 +660,13 @@ function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning 
 	y += 30;
 	ctx.fillStyle = CARD_COLORS.soft;
 	ctx.font = font(24);
-	ctx.fillText(`Certeza de que é ${fruitName.toLowerCase()}: ${detectionConfidence}%`, PAD, y);
+	ctx.fillText(detectionConfidence === null ? "Fruta escolhida no botão" : `Certeza de que é ${fruitName.toLowerCase()}: ${detectionConfidence}%`, PAD, y);
 	ctx.strokeStyle = CARD_COLORS.accent;
 	ctx.lineWidth = 3;
 	ctx.textAlign = "right";
-	ctx.fillText("Fruta encontrada        Manchas escuras", W - PAD, y);
-	const legendW = ctx.measureText("Fruta encontrada        Manchas escuras").width;
-	const spotsW = ctx.measureText("Manchas escuras").width;
+	ctx.fillText("Fruta encontrada        Manchas e mofo", W - PAD, y);
+	const legendW = ctx.measureText("Fruta encontrada        Manchas e mofo").width;
+	const spotsW = ctx.measureText("Manchas e mofo").width;
 	ctx.strokeRect(W - PAD - legendW - 30, y - 20, 20, 20);
 	ctx.fillStyle = "rgba(255, 64, 64, 0.8)";
 	ctx.fillRect(W - PAD - spotsW - 30, y - 20, 20, 20);
@@ -676,25 +769,38 @@ function showNotice(message) {
 async function analyzePhoto() {
 	await ensureDetector();
 
-	const predictions = await detector.detect(photoCanvas);
-	const prediction = pickPrediction(predictions);
+	const predictions = await detectObjects(photoCanvas);
+	let prediction = pickPrediction(predictions);
+	let manual = false;
 
 	if (!prediction) {
-		resetSidebarState("Nenhuma fruta na foto");
-		showNotice(`Não encontrei ${fruitWanted()} na foto. Tente mais perto, com a fruta inteira e um fundo liso.`);
-		return;
+		// Se a pessoa escolheu a fruta no botão, analisa o centro da foto mesmo assim
+		if (selectedMode && selectedMode !== "auto") {
+			const side = Math.min(photoCanvas.width, photoCanvas.height) * 0.7;
+			prediction = {
+				class: selectedMode,
+				score: 0,
+				bbox: [(photoCanvas.width - side) / 2, (photoCanvas.height - side) / 2, side, side],
+			};
+			manual = true;
+		} else {
+			resetSidebarState("Nenhuma fruta na foto");
+			showNotice(`Não encontrei ${fruitWanted()} na foto. Tente mais perto, com a fruta inteira e um fundo liso, ou escolha a fruta nos botões.`);
+			return;
+		}
 	}
 
 	const fruitKey = prediction.class;
-	const results = CROP_SIZES.map((size) => analyzeRegion(fruitKey, prediction.bbox, size)).filter(Boolean);
-	const freshness = averageFreshness(results);
-	const detectionConfidence = Math.round(prediction.score * 100);
-	const warning = lightMessage(freshness.avg.brightness);
+	const { freshness, mask } = analyzeFruit(fruitKey, prediction.bbox);
+	const detectionConfidence = manual ? null : Math.round(prediction.score * 100);
+	const warnings = [lightMessage(freshness.avg.brightness)];
+	if (manual) warnings.push("A fruta não foi localizada automaticamente: foi analisado o centro da foto.");
+	const warning = warnings.filter(Boolean).join(" ") || null;
 
 	renderFruitState(fruitKey, freshness, detectionConfidence);
 
-	// A máscara do recorte do meio é a que aparece desenhada na foto
-	const overlay = buildOverlay(prediction, results[1] ?? results[0]);
+	// Caixa verde e defeitos pintados de vermelho por cima da foto
+	const overlay = buildOverlay(prediction, mask);
 	const card = buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning });
 	await showCard(card, fruitKey);
 
@@ -771,7 +877,7 @@ async function detectLive() {
 
 	detectionInProgress = true;
 	try {
-		const predictions = await detector.detect(cameraFeed);
+		const predictions = await detectObjects(cameraFeed);
 		const prediction = pickPrediction(predictions);
 
 		if (prediction) {
@@ -782,7 +888,9 @@ async function detectLive() {
 			missCount++;
 			if (missCount >= MAX_MISSES) {
 				clearCanvas();
-				setLiveHint(`Procurando ${fruitWanted()}...`);
+				const dica = selectedMode === "auto" && missCount >= MAX_MISSES * 3 ? " Dica: escolha a fruta nos botões." : "";
+				const dicaManual = selectedMode !== "auto" && missCount >= MAX_MISSES * 3 ? " Pode analisar mesmo assim." : "";
+				setLiveHint(`Procurando ${fruitWanted()}...${dica}${dicaManual}`, Boolean(dicaManual));
 			}
 		}
 	} finally {
@@ -819,24 +927,61 @@ const errorMessages = {
 	ModelError: "Não foi possível carregar o modelo de detecção. Verifique sua internet e recarregue a página.",
 };
 
-async function ensureDetector() {
-	if (detector) return;
-	if (typeof cocoSsd === "undefined") {
-		const error = new Error("COCO-SSD não carregou");
-		error.name = "ModelError";
-		throw error;
+// O modelo começa a carregar assim que a página abre (não espera o clique).
+// Depois de carregar, faz uma detecção "de aquecimento": a primeira detecção
+// é sempre lenta porque o navegador prepara a placa de vídeo (WebGL).
+let detectorPromise = null;
+function ensureDetector() {
+	if (detector) return Promise.resolve();
+	if (!detectorPromise) {
+		detectorPromise = (async () => {
+			if (typeof cocoSsd === "undefined") {
+				const error = new Error("COCO-SSD não carregou");
+				error.name = "ModelError";
+				throw error;
+			}
+			if (typeof tf !== "undefined") {
+				try {
+					await tf.setBackend("webgl");
+				} catch (error) {
+					console.warn("WebGL indisponível, usando o padrão", error);
+				}
+				await tf.ready();
+			}
+			const model = await cocoSsd.load();
+			const warmup = document.createElement("canvas");
+			warmup.width = 300;
+			warmup.height = 300;
+			await model.detect(warmup);
+			detector = model;
+		})().catch((error) => {
+			detectorPromise = null;
+			throw error;
+		});
 	}
-	cameraMessage.textContent = "Carregando modelo de detecção...";
-	detector = await cocoSsd.load();
+	return detectorPromise;
 }
+
+// Lista de detecções do COCO-SSD. O limite padrão (50%) descartava muitas
+// frutas; como só olhamos banana, maçã e laranja, dá para aceitar a partir de 25%.
+const DETECT_MIN_SCORE = 0.25;
+function detectObjects(input) {
+	return detector.detect(input, 20, DETECT_MIN_SCORE);
+}
+
+// Começa a carregar o modelo em segundo plano logo que a página abre
+window.addEventListener("load", () => {
+	ensureDetector().catch((error) => console.warn("Modelo ainda não carregou", error));
+});
 
 async function startCamera() {
 	try {
 		await startCapture();
+		if (!detector) cameraMessage.textContent = "Preparando a detecção (só demora na primeira vez)...";
 		await ensureDetector();
 
 		if (!detectionLoopStarted) {
-			window.setInterval(detectLive, 700);
+			window.setInterval(detectLive, 500);
 			detectionLoopStarted = true;
 		}
 
