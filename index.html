@@ -53,21 +53,35 @@
             <section class="hero-panel" id="sobre">
                 <div class="detection-section" id="testar" aria-labelledby="detection-title">
                     <span class="section-badge badge-highlight">Detecção em tempo real</span>
-                    <h2 id="detection-title">Aponte a câmera para uma fruta</h2>
+                    <h2 id="detection-title">Fotografe uma fruta</h2>
 
                     <div class="camera-card">
                         <div class="camera-frame">
                             <video id="camera-feed" autoplay muted playsinline aria-label="Imagem da câmera"></video>
                             <canvas id="detection-canvas" aria-hidden="true"></canvas>
-                            <div id="light-warning" class="light-warning" role="status" hidden></div>
+                            <div id="live-hint" class="live-hint" role="status" hidden></div>
                             <div id="camera-lock" class="camera-lock">
-                                <div id="camera-message" class="camera-message">Toque em Automático ou escolha uma fruta para começar</div>
+                                <div id="camera-message" class="camera-message">Toque em Automático ou escolha uma fruta para abrir a câmera. Você também pode usar uma foto da galeria.</div>
                             </div>
                         </div>
-                        <p class="camera-legend"><span class="legend-box"></span> Fruta encontrada <span class="legend-spot"></span> Manchas escuras</p>
+
+                        <div class="photo-actions">
+                            <button id="capture-button" class="action-primary" type="button" disabled>📸 Analisar foto</button>
+                            <button id="gallery-button" class="action-secondary" type="button">🖼️ Escolher da galeria</button>
+                            <input id="gallery-input" type="file" accept="image/*" hidden>
+                        </div>
                     </div>
 
-                    <div class="fruit-selector" role="group" aria-label="Escolha como detectar">
+                    <section id="photo-result" class="photo-result" aria-label="Resultado da foto" hidden>
+                        <img id="result-card" class="result-card" alt="Foto analisada com o resultado do frescor">
+                        <div class="result-actions">
+                            <button id="download-button" class="action-primary" type="button">⬇️ Baixar</button>
+                            <button id="share-button" class="action-secondary" type="button" hidden>📤 Compartilhar</button>
+                            <button id="new-photo-button" class="action-secondary" type="button">🔄 Nova foto</button>
+                        </div>
+                    </section>
+
+                    <div class="fruit-selector" role="group" aria-label="Escolha a fruta" id="fruit-selector">
                         <button class="fruit-option" type="button" data-fruit="auto" aria-pressed="false">
                             <span class="auto-icon" aria-hidden="true">✦</span> Automático
                         </button>

@@ -3,7 +3,16 @@ const detectionCanvas = document.querySelector("#detection-canvas");
 const cameraFrame = document.querySelector(".camera-frame");
 const cameraLock = document.querySelector("#camera-lock");
 const cameraMessage = document.querySelector("#camera-message");
-const lightWarning = document.querySelector("#light-warning");
+const liveHint = document.querySelector("#live-hint");
+const captureButton = document.querySelector("#capture-button");
+const galleryButton = document.querySelector("#gallery-button");
+const galleryInput = document.querySelector("#gallery-input");
+const cameraCard = document.querySelector(".camera-card");
+const photoResult = document.querySelector("#photo-result");
+const resultCard = document.querySelector("#result-card");
+const downloadButton = document.querySelector("#download-button");
+const shareButton = document.querySelector("#share-button");
+const newPhotoButton = document.querySelector("#new-photo-button");
 const fruitOptions = document.querySelectorAll(".fruit-option");
 const detectedFruit = document.querySelector("#detected-fruit");
 const freshnessStatus = document.querySelector("#freshness-status");
@@ -111,8 +120,10 @@ const PERFIS = {
 	},
 };
 
-// Quantas análises seguidas são usadas na média (evita o resultado "piscar")
-const HISTORY_SIZE = 5;
+// Recortes usados na análise da foto (a média deles deixa o resultado mais estável)
+const CROP_SIZES = [0.6, 0.72, 0.84];
+// Maior lado da foto analisada (fotos de celular são enormes e deixariam tudo lento)
+const MAX_PHOTO_SIDE = 1280;
 // Quantas leituras sem achar a fruta antes de limpar o resultado
 const MAX_MISSES = 3;
 // Limites de luz: abaixo ou acima disso o resultado não é confiável
@@ -137,20 +148,20 @@ const classBars = {
 	passado: [document.querySelector("#bar-passado"), document.querySelector("#pct-passado")],
 };
 
-// Canvas escondido, só para ler os pixels do vídeo
-const frameCanvas = document.createElement("canvas");
-const frameContext = frameCanvas.getContext("2d", { willReadFrequently: true });
+// Canvas escondido que guarda a foto analisada (da câmera ou da galeria)
+const photoCanvas = document.createElement("canvas");
+const photoContext = photoCanvas.getContext("2d", { willReadFrequently: true });
 
 let detector;
 let selectedMode = null; // "auto", "banana", "apple" ou "orange"
-let currentFruit = null; // fruta que está sendo analisada agora
 let cameraStarted = false;
 let detectionInProgress = false;
 let detectionLoopStarted = false;
-let freshnessHistory = [];
+let showingResult = false;
 let missCount = 0;
+let lastCardBlob = null;
+let lastCardName = "fresh-food.png";
 let voiceOn = false;
-let lastSpoken = "";
 
 function inHueRanges(h, ranges) {
 	return ranges.some(([lo, hi]) => h >= lo && h <= hi);
@@ -239,36 +250,33 @@ function computeFreshness(imageData, perfil) {
 		mask,
 	};
 }
-
-// Recorta o centro da caixa que o COCO-SSD achou (72%), para pegar menos fundo
-function analyzeRegion(fruitKey, bbox) {
+// Analisa um recorte do centro da caixa que o COCO-SSD achou.
+// "size" é quanto da caixa entra no recorte (0.72 = 72%), para pegar menos fundo.
+function analyzeRegion(fruitKey, bbox, size) {
 	const perfil = PERFIS[fruitKey];
-	const vw = cameraFeed.videoWidth;
-	const vh = cameraFeed.videoHeight;
-	if (!perfil || !vw || !vh) return null;
+	const pw = photoCanvas.width;
+	const ph = photoCanvas.height;
+	if (!perfil || !pw || !ph) return null;
 
-	frameCanvas.width = vw;
-	frameCanvas.height = vh;
-	frameContext.drawImage(cameraFeed, 0, 0, vw, vh);
-
+	const margin = (1 - size) / 2;
 	const [x, y, w, h] = bbox;
-	const cropX = Math.max(0, Math.round(x + w * 0.14));
-	const cropY = Math.max(0, Math.round(y + h * 0.14));
-	const cropW = Math.max(1, Math.min(vw - cropX, Math.round(w * 0.72)));
-	const cropH = Math.max(1, Math.min(vh - cropY, Math.round(h * 0.72)));
+	const cropX = Math.max(0, Math.round(x + w * margin));
+	const cropY = Math.max(0, Math.round(y + h * margin));
+	const cropW = Math.max(1, Math.min(pw - cropX, Math.round(w * size)));
+	const cropH = Math.max(1, Math.min(ph - cropY, Math.round(h * size)));
 
-	const imageData = frameContext.getImageData(cropX, cropY, cropW, cropH);
+	const imageData = photoContext.getImageData(cropX, cropY, cropW, cropH);
 	const result = computeFreshness(imageData, perfil);
 	result.cropX = cropX;
 	result.cropY = cropY;
 	return result;
 }
 
-// Média das últimas leituras e escolha do estado vencedor
-function averageFreshness() {
-	const n = freshnessHistory.length;
-	const avg = { fresco: 0, moderado: 0, passado: 0, pVibrante: 0, pMarrom: 0, pOpaco: 0 };
-	freshnessHistory.forEach((r) => {
+// Média de várias análises e escolha do estado vencedor
+function averageFreshness(results) {
+	const n = results.length;
+	const avg = { fresco: 0, moderado: 0, passado: 0, pVibrante: 0, pMarrom: 0, pOpaco: 0, brightness: 0 };
+	results.forEach((r) => {
 		Object.keys(avg).forEach((k) => {
 			avg[k] += r[k] / n;
 		});
@@ -289,6 +297,15 @@ function buildReason(avg) {
 	return `${viva}% da casca com cor viva, ${manchas}% com manchas escuras e ${opaca}% com cor apagada.`;
 }
 
+function lightMessage(brightness) {
+	if (brightness < LIGHT_MIN) return "Atenção: pouca luz na foto, o resultado pode não ser confiável.";
+	if (brightness > LIGHT_MAX) return "Atenção: luz forte demais na foto, o resultado pode não ser confiável.";
+	return null;
+}
+
+// ---------------------------------------------------------------
+// Painel lateral e painel de resultado
+// ---------------------------------------------------------------
 function fillNutrition(fruitKey) {
 	const nutrition = fruitData[fruitKey]?.nutrition ?? fruitData.orange.nutrition;
 	const lists = [nutritionalList, nutritionalListMobile].filter(Boolean);
@@ -318,40 +335,25 @@ function setClassBars(avg) {
 	});
 }
 
-function showLightWarning(message) {
-	lightWarning.hidden = !message;
-	lightWarning.textContent = message ?? "";
-}
-
 function resetSidebarState(message = "Aguardando") {
 	fruitStateFilled.hidden = true;
 	fruitStateEmpty.hidden = false;
 	statusBadge.textContent = "Aguardando";
 	statusBadge.className = "status-badge neutral";
-	recommendationText.textContent = "Aponte a câmera para uma fruta";
+	recommendationText.textContent = "Tire uma foto de uma fruta";
 	confidenceBadge.textContent = "0%";
 	setConfidence(0);
 	setClassBars(null);
 	freshnessReason.textContent = "O motivo do resultado aparece aqui.";
 	nutritionBlocks.forEach((block) => { block.hidden = true; });
-	showLightWarning(null);
-	lastSpoken = "";
-	if (detectedFruit) {
-		detectedFruit.textContent = message;
-	}
-	if (freshnessStatus) {
-		freshnessStatus.textContent = "Aguardando";
-		freshnessStatus.className = "status-fresh";
-	}
+	detectedFruit.textContent = message;
+	freshnessStatus.textContent = "Aguardando";
+	freshnessStatus.className = "status-fresh";
 }
 
-// Só é chamada quando existe uma análise real da imagem
 function renderFruitState(fruitKey, freshness, detectionConfidence) {
-	if (!fruitData[fruitKey]) return;
-
 	const { state, percent, avg } = freshness;
 	const fruitName = fruitNames[fruitKey];
-	const recommendation = state.tips[fruitKey];
 
 	fruitStateFilled.hidden = false;
 	fruitStateEmpty.hidden = true;
@@ -361,7 +363,7 @@ function renderFruitState(fruitKey, freshness, detectionConfidence) {
 	confidenceBadge.textContent = `${state.label} • ${percent}%`;
 	statusBadge.textContent = state.label;
 	statusBadge.className = `status-badge ${state.className}`;
-	recommendationText.textContent = recommendation;
+	recommendationText.textContent = state.tips[fruitKey];
 
 	detectedFruit.textContent = fruitName;
 	freshnessStatus.textContent = state.label;
@@ -370,19 +372,13 @@ function renderFruitState(fruitKey, freshness, detectionConfidence) {
 	setClassBars(avg);
 	setConfidence(detectionConfidence);
 	fillNutrition(fruitKey);
-
-	// Só fala depois de juntar leituras suficientes, para não falar um resultado instável
-	if (freshnessHistory.length >= HISTORY_SIZE) {
-		speak(`${fruitName}: ${state.label}. ${recommendation}`);
-	}
 }
 
 // ---------------------------------------------------------------
 // Voz (Web Speech API, funciona offline na maioria dos navegadores)
 // ---------------------------------------------------------------
 function speak(text) {
-	if (!voiceOn || !("speechSynthesis" in window) || text === lastSpoken) return;
-	lastSpoken = text;
+	if (!voiceOn || !("speechSynthesis" in window)) return;
 	window.speechSynthesis.cancel();
 	const utterance = new SpeechSynthesisUtterance(text);
 	utterance.lang = "pt-BR";
@@ -402,94 +398,393 @@ if (!("speechSynthesis" in window)) {
 
 voiceToggle.addEventListener("click", () => {
 	voiceOn = !voiceOn;
-	lastSpoken = "";
 	if (!voiceOn) window.speechSynthesis.cancel();
 	updateVoiceButton();
 });
 
 // ---------------------------------------------------------------
-// Desenho por cima do vídeo
+// Cartão com a foto e todas as informações (imagem para baixar/compartilhar)
 // ---------------------------------------------------------------
-function clearCanvas() {
-	detectionCanvas.getContext("2d").clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
+const CARD_COLORS = {
+	background: "#0d1117",
+	text: "#ffffff",
+	soft: "rgba(255, 255, 255, 0.7)",
+	track: "rgba(255, 255, 255, 0.12)",
+	accent: "#3ddc84",
+	fresco: "#3ddc84",
+	moderado: "#f2c94c",
+	passado: "#eb5757",
+};
+
+// Quebra o texto em linhas que cabem na largura e devolve a altura usada
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
+	const words = text.split(" ");
+	let line = "";
+	let lines = 0;
+	words.forEach((word) => {
+		const test = line ? `${line} ${word}` : word;
+		if (ctx.measureText(test).width > maxWidth && line) {
+			ctx.fillText(line, x, y + lines * lineHeight);
+			lines++;
+			line = word;
+		} else {
+			line = test;
+		}
+	});
+	if (line) {
+		ctx.fillText(line, x, y + lines * lineHeight);
+		lines++;
+	}
+	return lines * lineHeight;
 }
 
-function drawPrediction(prediction, analysis) {
-	const [x, y, width, height] = prediction.bbox;
-	const context = detectionCanvas.getContext("2d");
-	context.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
+function roundRect(ctx, x, y, w, h, r) {
+	ctx.beginPath();
+	ctx.moveTo(x + r, y);
+	ctx.arcTo(x + w, y, x + w, y + h, r);
+	ctx.arcTo(x + w, y + h, x, y + h, r);
+	ctx.arcTo(x, y + h, x, y, r);
+	ctx.arcTo(x, y, x + w, y, r);
+	ctx.closePath();
+}
 
-	// Pinta de vermelho as manchas escuras encontradas na casca
+// Camada com a caixa verde e as manchas pintadas, no tamanho da foto
+function buildOverlay(prediction, analysis) {
+	const overlay = document.createElement("canvas");
+	overlay.width = photoCanvas.width;
+	overlay.height = photoCanvas.height;
+	const ctx = overlay.getContext("2d");
 	if (analysis?.mask) {
-		context.putImageData(analysis.mask, analysis.cropX, analysis.cropY);
+		ctx.putImageData(analysis.mask, analysis.cropX, analysis.cropY);
+	}
+	const [x, y, w, h] = prediction.bbox;
+	ctx.strokeStyle = CARD_COLORS.accent;
+	ctx.lineWidth = Math.max(3, Math.round(photoCanvas.width / 250));
+	ctx.strokeRect(x, y, w, h);
+	return overlay;
+}
+
+function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning }) {
+	const W = 1080;
+	const PAD = 60;
+	const scale = Math.min(W / photoCanvas.width, 1350 / photoCanvas.height);
+	const photoW = Math.round(photoCanvas.width * scale);
+	const photoH = Math.round(photoCanvas.height * scale);
+	const panelH = 900; // altura máxima; o que sobrar é cortado no fim
+
+	const card = document.createElement("canvas");
+	card.width = W;
+	card.height = photoH + panelH;
+	const ctx = card.getContext("2d");
+	const font = (size, weight = 400) => `${weight} ${size}px Inter, Arial, sans-serif`;
+
+	ctx.fillStyle = CARD_COLORS.background;
+	ctx.fillRect(0, 0, W, card.height);
+
+	// Foto com a caixa e as manchas por cima
+	const photoX = Math.round((W - photoW) / 2);
+	ctx.fillStyle = "#000000";
+	ctx.fillRect(0, 0, W, photoH);
+	ctx.drawImage(photoCanvas, photoX, 0, photoW, photoH);
+	ctx.drawImage(overlay, photoX, 0, photoW, photoH);
+
+	const { state, percent, avg } = freshness;
+	const stateColor = CARD_COLORS[state.className];
+	let y = photoH + 70;
+
+	// Cabeçalho: marca e data
+	ctx.fillStyle = CARD_COLORS.accent;
+	ctx.font = font(26, 700);
+	ctx.textAlign = "left";
+	ctx.fillText("FRESH FOOD", PAD, y);
+	ctx.fillStyle = CARD_COLORS.soft;
+	ctx.font = font(26);
+	ctx.textAlign = "right";
+	ctx.fillText(new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }), W - PAD, y);
+
+	// Nome da fruta e selo do estado
+	y += 90;
+	ctx.textAlign = "left";
+	ctx.fillStyle = CARD_COLORS.text;
+	ctx.font = font(72, 700);
+	const fruitName = fruitNames[fruitKey];
+	ctx.fillText(fruitName, PAD, y);
+	const nameWidth = ctx.measureText(fruitName).width;
+
+	ctx.font = font(32, 700);
+	const pillText = `${state.label.toUpperCase()} • ${percent}%`;
+	const pillW = ctx.measureText(pillText).width + 48;
+	const pillX = PAD + nameWidth + 32;
+	ctx.fillStyle = stateColor;
+	ctx.globalAlpha = 0.18;
+	roundRect(ctx, pillX, y - 50, pillW, 62, 31);
+	ctx.fill();
+	ctx.globalAlpha = 1;
+	ctx.fillStyle = stateColor;
+	ctx.fillText(pillText, pillX + 24, y - 8);
+
+	// Barras das três classes
+	y += 70;
+	const labelX = PAD;
+	const trackX = PAD + 200;
+	const trackW = W - PAD * 2 - 200 - 110;
+	["fresco", "moderado", "passado"].forEach((key) => {
+		const value = Math.round(avg[key]);
+		ctx.fillStyle = CARD_COLORS.text;
+		ctx.font = font(30, 600);
+		ctx.textAlign = "left";
+		ctx.fillText(statusStates[key].label, labelX, y);
+
+		ctx.fillStyle = CARD_COLORS.track;
+		roundRect(ctx, trackX, y - 22, trackW, 20, 10);
+		ctx.fill();
+		if (value > 0) {
+			ctx.fillStyle = CARD_COLORS[key];
+			roundRect(ctx, trackX, y - 22, Math.max(20, (trackW * value) / 100), 20, 10);
+			ctx.fill();
+		}
+
+		ctx.fillStyle = CARD_COLORS.text;
+		ctx.font = font(30, 700);
+		ctx.textAlign = "right";
+		ctx.fillText(`${value}%`, W - PAD, y);
+		y += 58;
+	});
+
+	// Motivo e dica de uso
+	y += 20;
+	ctx.textAlign = "left";
+	ctx.fillStyle = CARD_COLORS.soft;
+	ctx.font = font(28);
+	y += drawWrappedText(ctx, buildReason(avg), PAD, y, W - PAD * 2, 40);
+
+	y += 20;
+	ctx.fillStyle = CARD_COLORS.text;
+	ctx.font = font(32, 600);
+	y += drawWrappedText(ctx, state.tips[fruitKey], PAD, y, W - PAD * 2, 44);
+
+	// Rodapé: certeza da detecção, legenda e aviso de luz
+	y += 30;
+	ctx.fillStyle = CARD_COLORS.soft;
+	ctx.font = font(24);
+	ctx.fillText(`Certeza de que é ${fruitName.toLowerCase()}: ${detectionConfidence}%`, PAD, y);
+	ctx.strokeStyle = CARD_COLORS.accent;
+	ctx.lineWidth = 3;
+	ctx.textAlign = "right";
+	ctx.fillText("Fruta encontrada        Manchas escuras", W - PAD, y);
+	const legendW = ctx.measureText("Fruta encontrada        Manchas escuras").width;
+	const spotsW = ctx.measureText("Manchas escuras").width;
+	ctx.strokeRect(W - PAD - legendW - 30, y - 20, 20, 20);
+	ctx.fillStyle = "rgba(255, 64, 64, 0.8)";
+	ctx.fillRect(W - PAD - spotsW - 30, y - 20, 20, 20);
+
+	if (warning) {
+		y += 50;
+		ctx.textAlign = "left";
+		ctx.fillStyle = CARD_COLORS.moderado;
+		ctx.font = font(26, 600);
+		y += drawWrappedText(ctx, warning, PAD, y, W - PAD * 2, 36) - 36;
 	}
 
-	context.strokeStyle = "#3ddc84";
-	context.lineWidth = 3;
-	context.strokeRect(x, y, width, height);
+	// Corta o espaço que sobrou embaixo
+	const trimmed = document.createElement("canvas");
+	trimmed.width = W;
+	trimmed.height = Math.min(card.height, Math.round(y + PAD));
+	trimmed.getContext("2d").drawImage(card, 0, 0);
+	return trimmed;
+}
+
+async function showCard(card, fruitKey) {
+	const blob = await new Promise((resolve) => card.toBlob(resolve, "image/png"));
+	lastCardBlob = blob;
+	const today = new Date().toISOString().slice(0, 10);
+	lastCardName = `fresh-food-${fruitNames[fruitKey].toLowerCase().replace("ç", "c").replace("ã", "a")}-${today}.png`;
+
+	if (resultCard.src.startsWith("blob:")) URL.revokeObjectURL(resultCard.src);
+	resultCard.src = URL.createObjectURL(blob);
+
+	// Só mostra "Compartilhar" se o aparelho souber compartilhar imagens
+	const file = new File([blob], lastCardName, { type: "image/png" });
+	shareButton.hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
+
+	showingResult = true;
+	cameraCard.hidden = true;
+	photoResult.hidden = false;
+	photoResult.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+downloadButton.addEventListener("click", () => {
+	if (!lastCardBlob) return;
+	const link = document.createElement("a");
+	link.href = resultCard.src;
+	link.download = lastCardName;
+	link.click();
+});
+
+shareButton.addEventListener("click", async () => {
+	if (!lastCardBlob) return;
+	const file = new File([lastCardBlob], lastCardName, { type: "image/png" });
+	try {
+		await navigator.share({ files: [file], title: "Fresh Food", text: "Resultado da análise de frescor" });
+	} catch (error) {
+		// A pessoa fechou a janela de compartilhar: não é erro
+		if (error.name !== "AbortError") console.error(error);
+	}
+});
+
+newPhotoButton.addEventListener("click", () => {
+	showingResult = false;
+	photoResult.hidden = true;
+	cameraCard.hidden = false;
+	clearCanvas();
+	window.speechSynthesis?.cancel();
+});
+
+// ---------------------------------------------------------------
+// Análise da foto
+// ---------------------------------------------------------------
+function fitPhotoCanvas(width, height) {
+	const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(width, height));
+	photoCanvas.width = Math.round(width * scale);
+	photoCanvas.height = Math.round(height * scale);
 }
 
 // Escolhe qual detecção usar: no modo automático, a fruta mais provável entre as três
 function pickPrediction(predictions) {
-	const allowed = selectedMode === "auto" ? Object.keys(fruitNames) : [selectedMode];
+	const mode = selectedMode ?? "auto";
+	const allowed = mode === "auto" ? Object.keys(fruitNames) : [mode];
 	return predictions
 		.filter((p) => allowed.includes(p.class))
 		.sort((a, b) => b.score - a.score)[0];
 }
 
-function lookingForText() {
-	return selectedMode === "auto" ? "Procurando fruta..." : `Procurando ${fruitNames[selectedMode]}...`;
+function fruitWanted() {
+	return !selectedMode || selectedMode === "auto" ? "banana, maçã ou laranja" : fruitNames[selectedMode].toLowerCase();
 }
 
-async function detectFruit() {
-	if (detectionInProgress || !selectedMode || !detector || cameraFeed.readyState < 2) {
+// Mostra um recado por cima da câmera por alguns segundos
+let noticeTimer;
+function showNotice(message) {
+	cameraLock.classList.remove("is-hidden");
+	cameraMessage.textContent = message;
+	window.clearTimeout(noticeTimer);
+	if (cameraStarted) {
+		noticeTimer = window.setTimeout(() => cameraLock.classList.add("is-hidden"), 3500);
+	}
+}
+
+async function analyzePhoto() {
+	await ensureDetector();
+
+	const predictions = await detector.detect(photoCanvas);
+	const prediction = pickPrediction(predictions);
+
+	if (!prediction) {
+		resetSidebarState("Nenhuma fruta na foto");
+		showNotice(`Não encontrei ${fruitWanted()} na foto. Tente mais perto, com a fruta inteira e um fundo liso.`);
+		return;
+	}
+
+	const fruitKey = prediction.class;
+	const results = CROP_SIZES.map((size) => analyzeRegion(fruitKey, prediction.bbox, size)).filter(Boolean);
+	const freshness = averageFreshness(results);
+	const detectionConfidence = Math.round(prediction.score * 100);
+	const warning = lightMessage(freshness.avg.brightness);
+
+	renderFruitState(fruitKey, freshness, detectionConfidence);
+
+	// A máscara do recorte do meio é a que aparece desenhada na foto
+	const overlay = buildOverlay(prediction, results[1] ?? results[0]);
+	const card = buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning });
+	await showCard(card, fruitKey);
+
+	speak(`${fruitNames[fruitKey]}: ${freshness.state.label}. ${freshness.state.tips[fruitKey]}`);
+}
+
+async function runAnalysis(prepare) {
+	captureButton.disabled = true;
+	galleryButton.disabled = true;
+	const oldText = captureButton.textContent;
+	captureButton.textContent = "Analisando...";
+	try {
+		await prepare();
+		await analyzePhoto();
+	} catch (error) {
+		console.error(error);
+		showNotice(errorMessages[error.name] ?? "Não foi possível analisar a foto. Tente de novo.");
+	} finally {
+		captureButton.textContent = oldText;
+		captureButton.disabled = !cameraStarted || !detector;
+		galleryButton.disabled = false;
+	}
+}
+
+captureButton.addEventListener("click", () => {
+	runAnalysis(async () => {
+		fitPhotoCanvas(cameraFeed.videoWidth, cameraFeed.videoHeight);
+		photoContext.drawImage(cameraFeed, 0, 0, photoCanvas.width, photoCanvas.height);
+	});
+});
+
+galleryButton.addEventListener("click", () => galleryInput.click());
+
+galleryInput.addEventListener("change", () => {
+	const file = galleryInput.files?.[0];
+	galleryInput.value = "";
+	if (!file) return;
+	if (!selectedMode) markMode("auto");
+
+	runAnalysis(async () => {
+		const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+		fitPhotoCanvas(bitmap.width, bitmap.height);
+		photoContext.drawImage(bitmap, 0, 0, photoCanvas.width, photoCanvas.height);
+		bitmap.close?.();
+	});
+});
+
+// ---------------------------------------------------------------
+// Visor ao vivo: só mostra a caixa, para ajudar a enquadrar
+// ---------------------------------------------------------------
+function clearCanvas() {
+	detectionCanvas.getContext("2d").clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
+}
+
+function drawBox(prediction) {
+	const [x, y, width, height] = prediction.bbox;
+	const context = detectionCanvas.getContext("2d");
+	context.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
+	context.strokeStyle = CARD_COLORS.accent;
+	context.lineWidth = 3;
+	context.strokeRect(x, y, width, height);
+}
+
+function setLiveHint(message, ready = false) {
+	liveHint.hidden = !message;
+	liveHint.textContent = message ?? "";
+	liveHint.classList.toggle("is-ready", ready);
+}
+
+async function detectLive() {
+	if (showingResult || detectionInProgress || !selectedMode || !detector || cameraFeed.readyState < 2) {
 		return;
 	}
 
 	detectionInProgress = true;
 	try {
 		const predictions = await detector.detect(cameraFeed);
-		const fruitPrediction = pickPrediction(predictions);
+		const prediction = pickPrediction(predictions);
 
-		if (!fruitPrediction) {
+		if (prediction) {
+			missCount = 0;
+			drawBox(prediction);
+			setLiveHint(`${fruitNames[prediction.class]} encontrada. Pode analisar!`, true);
+		} else {
 			missCount++;
 			if (missCount >= MAX_MISSES) {
-				freshnessHistory = [];
-				currentFruit = null;
 				clearCanvas();
-				resetSidebarState(lookingForText());
+				setLiveHint(`Procurando ${fruitWanted()}...`);
 			}
-			return;
 		}
-
-		missCount = 0;
-
-		// Se a fruta mudou (modo automático), começa a média do zero
-		if (fruitPrediction.class !== currentFruit) {
-			currentFruit = fruitPrediction.class;
-			freshnessHistory = [];
-			lastSpoken = "";
-		}
-
-		const result = analyzeRegion(currentFruit, fruitPrediction.bbox);
-		drawPrediction(fruitPrediction, result);
-		if (!result) return;
-
-		// Luz ruim: avisa e não usa essa leitura, para não dar resultado errado
-		if (result.brightness < LIGHT_MIN) {
-			showLightWarning("Pouca luz. Aproxime a fruta de uma janela ou lâmpada.");
-			return;
-		}
-		if (result.brightness > LIGHT_MAX) {
-			showLightWarning("Luz forte demais. Tire a fruta do sol direto ou do flash.");
-			return;
-		}
-		showLightWarning(null);
-
-		freshnessHistory.push(result);
-		if (freshnessHistory.length > HISTORY_SIZE) freshnessHistory.shift();
-		const detectionConfidence = Math.round(fruitPrediction.score * 100);
-		renderFruitState(currentFruit, averageFreshness(), detectionConfidence);
 	} finally {
 		detectionInProgress = false;
 	}
@@ -517,57 +812,62 @@ async function startCapture() {
 }
 
 const errorMessages = {
-	NotAllowedError: "Permissão da câmera bloqueada. Clique no cadeado do navegador e permita o acesso.",
+	NotAllowedError: "Permissão da câmera bloqueada. Clique no cadeado do navegador e permita o acesso. Você ainda pode usar uma foto da galeria.",
 	NotReadableError: "A câmera está sendo usada por outro app (Teams, Zoom, WhatsApp...). Feche e tente de novo.",
-	NotFoundError: "Nenhuma câmera encontrada neste dispositivo.",
-	NotSupportedError: "Este navegador não permite usar a câmera.",
+	NotFoundError: "Nenhuma câmera encontrada. Você ainda pode usar uma foto da galeria.",
+	NotSupportedError: "Este navegador não permite usar a câmera. Você ainda pode usar uma foto da galeria.",
 	ModelError: "Não foi possível carregar o modelo de detecção. Verifique sua internet e recarregue a página.",
 };
 
-async function startDetection() {
+async function ensureDetector() {
+	if (detector) return;
+	if (typeof cocoSsd === "undefined") {
+		const error = new Error("COCO-SSD não carregou");
+		error.name = "ModelError";
+		throw error;
+	}
+	cameraMessage.textContent = "Carregando modelo de detecção...";
+	detector = await cocoSsd.load();
+}
+
+async function startCamera() {
 	try {
 		await startCapture();
-
-		if (!detector) {
-			if (typeof cocoSsd === "undefined") {
-				const error = new Error("COCO-SSD não carregou");
-				error.name = "ModelError";
-				throw error;
-			}
-			cameraMessage.textContent = "Carregando modelo de detecção...";
-			detector = await cocoSsd.load();
-		}
+		await ensureDetector();
 
 		if (!detectionLoopStarted) {
-			window.setInterval(detectFruit, 700);
+			window.setInterval(detectLive, 700);
 			detectionLoopStarted = true;
 		}
 
+		captureButton.disabled = false;
 		cameraLock.classList.add("is-hidden");
 		cameraFrame?.classList.remove("is-error");
+		setLiveHint(`Procurando ${fruitWanted()}...`);
 	} catch (error) {
 		console.error(error);
 		cameraFrame?.classList.add("is-error");
 		cameraLock.classList.remove("is-hidden");
-		cameraMessage.textContent = errorMessages[error.name] ?? "Não foi possível acessar a câmera. Verifique se ela está disponível.";
-		resetSidebarState("Aguardando");
-		freshnessStatus.textContent = error.name === "ModelError" ? "Modelo indisponível" : "Câmera indisponível";
+		cameraMessage.textContent = errorMessages[error.name] ?? "Não foi possível acessar a câmera. Você ainda pode usar uma foto da galeria.";
 	}
 }
 
-function selectMode(mode) {
+function markMode(mode) {
 	selectedMode = mode;
-	currentFruit = null;
-	freshnessHistory = [];
-	missCount = 0;
-
 	fruitOptions.forEach((option) => {
 		option.setAttribute("aria-pressed", option.dataset.fruit === mode);
 	});
+}
 
+function selectMode(mode) {
+	markMode(mode);
+	missCount = 0;
 	clearCanvas();
-	resetSidebarState(lookingForText());
-	startDetection();
+
+	// Se estava vendo um resultado, volta para a câmera
+	if (showingResult) newPhotoButton.click();
+	if (cameraStarted) setLiveHint(`Procurando ${fruitWanted()}...`);
+	startCamera();
 }
 
 fruitOptions.forEach((option) => {
