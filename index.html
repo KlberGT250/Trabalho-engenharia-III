@@ -198,44 +198,6 @@
                             <p class="explain-note">Cada medida é comparada com a média das fotos usadas no treino. Quanto maior a barra, mais aquela medida pesou.</p>
                         </div>
                     </section>
-
-                    <details class="about-model" id="sobre-modelo">
-                        <summary>Sobre o modelo: como foi testado</summary>
-
-                        <p>O classificador foi testado em <strong>570 fotos</strong> do dataset <em>Fruits fresh and rotten for classification</em> (Kaggle) que <strong>não foram usadas no treino</strong>. As cópias giradas ou espelhadas de uma mesma fruta ficam sempre do mesmo lado, para o teste não "colar" de uma foto já vista.</p>
-
-                        <h4>Desempenho por fruta</h4>
-                        <div class="table-wrap">
-                            <table class="data-table">
-                                <thead><tr><th scope="col">Fruta</th><th scope="col">Fotos</th><th scope="col">Acurácia</th><th scope="col">Precisão</th><th scope="col">Recall</th><th scope="col">F1</th></tr></thead>
-                                <tbody>
-                                    <tr><th scope="row">Banana</th><td>199</td><td>99,0%</td><td>99,1%</td><td>98,9%</td><td>99,0%</td></tr>
-                                    <tr><th scope="row">Maçã</th><td>174</td><td>93,1%</td><td>93,1%</td><td>92,8%</td><td>93,0%</td></tr>
-                                    <tr><th scope="row">Laranja</th><td>197</td><td>91,9%</td><td>92,6%</td><td>91,8%</td><td>91,8%</td></tr>
-                                    <tr class="row-total"><th scope="row">Geral</th><td>570</td><td>94,7%</td><td>95,0%</td><td>94,5%</td><td>94,7%</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="table-note">Precisão, recall e F1 são a média das duas classes (fresca e estragada), como no artigo FreshNet.</p>
-
-                        <h4>Matriz de confusão (todas as frutas)</h4>
-                        <div class="table-wrap">
-                            <table class="data-table confusion">
-                                <thead><tr><th scope="col">Real ↓ / Sistema →</th><th scope="col">Fresco</th><th scope="col">Moderado</th><th scope="col">Passado</th></tr></thead>
-                                <tbody>
-                                    <tr><th scope="row">Fresca</th><td class="cell-ok">299</td><td>7</td><td class="cell-erro">3</td></tr>
-                                    <tr><th scope="row">Estragada</th><td class="cell-erro">18</td><td>16</td><td class="cell-ok">227</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="table-note">O dataset só tem fotos marcadas como "fresca" ou "estragada", então o estado Moderado não tem resposta certa: ele mostra os casos em que o sistema ficou em dúvida. O erro mais sério é estragada classificada como fresca (18 de 261 fotos estragadas), a maioria laranjas (12 de 18).</p>
-
-                        <h4>Avisos de confiabilidade</h4>
-                        <ul class="about-list">
-                            <li><strong>Foto tremida:</strong> marca 56,9% das fotos com leve desfoque e só 2,6% das fotos nítidas.</li>
-                            <li><strong>Foto fora do padrão:</strong> marca 3,9% das fotos normais e pega a fruta errada (por exemplo, maçã analisada como banana) em 22,5% a 53,8% dos casos. É um aviso de "desconfie", não um detector perfeito.</li>
-                        </ul>
-                    </details>
                 </div>
             </section>
         </main>
