@@ -2,54 +2,78 @@ html {
 	scroll-behavior: smooth;
 }
 
+/* ---------------------------------------------------------------
+   Identidade visual: banca de feira
+   Papel creme, tinta verde-folha, amarelo-banana e terracota.
+   Os três estados usam cores de fruta de verdade:
+   folha (fresco), banana madura (moderado), terracota (passado).
+   --------------------------------------------------------------- */
 :root {
-	--background: #0a0e1a;
-	--header: #0d1117;
-	--sidebar: #0d1117;
-	--panel-bg: #0d1117;
-	--card-bg: rgba(255, 255, 255, 0.03);
-	--card-soft: rgba(61, 220, 132, 0.08);
-	--accent: #3ddc84;
-	--accent-bright: #3ddc84;
-	--accent-soft: rgba(61, 220, 132, 0.12);
-	--border-light: rgba(255, 255, 255, 0.08);
-	--text-soft: rgba(255, 255, 255, 0.88);
-	--text: #ffffff;
-	--card: rgba(255, 255, 255, 0.03);
-	--success: #3ddc84;
-	--warning: #f2c94c;
-	--danger: #eb5757;
-	--neutral: rgba(255,255,255,0.08);
-	--nutrition-label: #e7edf5;
-	--nutrition-value: #a9c2df;
-	--nutrition-row-alt: rgba(148, 163, 184, 0.08);
-	--nutrition-border: rgba(148, 163, 184, 0.28);
-	--nutrition-background: rgba(148, 163, 184, 0.04);
+	--background: #f4efe4;
+	--header: #efe8da;
+	--sidebar: #efe8da;
+	--panel-bg: #efe8da;
+	--card-bg: #fbf8f1;
+	--card-soft: #eef0e2;
+	--accent: #2f5d3a;
+	--accent-bright: #3f7d3c;
+	--accent-soft: #e3ead9;
+	--highlight: #e8b923;
+	--border-light: #ddd4c2;
+	--text-soft: #5e6656;
+	--text: #1f2a1e;
+	--card: #fbf8f1;
+	--success: #3f7d3c;
+	--warning: #c98a12;
+	--danger: #b5482b;
+	--success-soft: #e1ebd9;
+	--warning-soft: #f6e7c4;
+	--danger-soft: #f3dcd2;
+	--neutral: #e6dfd0;
+	--track: #e6dfd0;
+	--on-accent: #fbf8f1;
+	--viewfinder: #1c241b;
+	--nutrition-label: #1f2a1e;
+	--nutrition-value: #5e6656;
+	--nutrition-row-alt: #f1ebdf;
+	--nutrition-border: #ddd4c2;
+	--nutrition-background: #fbf8f1;
+	--font-display: "Fraunces", Georgia, serif;
+	--font-body: "Work Sans", Arial, sans-serif;
 }
 
-:root[data-theme="light"] {
-	--background: #ffffff;
-	--header: #f6f8f6;
-	--sidebar: #f6f8f6;
-	--panel-bg: #f6f8f6;
-	--card-bg: #ffffff;
-	--card-soft: rgba(31, 143, 82, 0.04);
-	--accent: #1f8f52;
-	--accent-bright: #2fb46a;
-	--accent-soft: rgba(47, 180, 106, 0.12);
-	--border-light: rgba(15, 23, 20, 0.1);
-	--text-soft: #667a6e;
-	--text: #12261b;
-	--card: #ffffff;
-	--success: #2fb46a;
-	--warning: #b8720a;
-	--danger: #c23b3b;
-	--neutral: rgba(18, 38, 27, 0.08);
-	--nutrition-label: #344054;
-	--nutrition-value: #356d9b;
-	--nutrition-row-alt: rgba(100, 116, 139, 0.07);
-	--nutrition-border: rgba(100, 116, 139, 0.24);
-	--nutrition-background: #f8fafc;
+/* Modo escuro: a mesma banca, à noite (verde-musgo, sem neon) */
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: #171b15;
+		--header: #1d2219;
+		--sidebar: #1d2219;
+		--panel-bg: #1d2219;
+		--card-bg: #20261c;
+		--card-soft: #263022;
+		--accent: #a9c98f;
+		--accent-bright: #a9c98f;
+		--accent-soft: #2c3827;
+		--border-light: #333c2d;
+		--text-soft: #a8ad9c;
+		--text: #efe9dc;
+		--card: #20261c;
+		--success: #8fbf72;
+		--warning: #e3b443;
+		--danger: #df7a58;
+		--success-soft: #26331f;
+		--warning-soft: #3a3019;
+		--danger-soft: #3d241b;
+		--neutral: #2c3327;
+		--track: #2f362a;
+		--on-accent: #171b15;
+		--viewfinder: #0f120d;
+		--nutrition-label: #efe9dc;
+		--nutrition-value: #a8ad9c;
+		--nutrition-row-alt: #242b20;
+		--nutrition-border: #333c2d;
+		--nutrition-background: #20261c;
+	}
 }
 
 * {
@@ -62,7 +86,8 @@ body {
 	overflow-x: hidden;
 	background: var(--background);
 	color: var(--text);
-	font-family: "Inter", sans-serif;
+	font-family: var(--font-body);
+	line-height: 1.5;
 }
 
 img {
@@ -129,7 +154,7 @@ select {
 	width: 56px;
 	height: 56px;
 	object-fit: cover;
-	border-radius: 16px;
+	border-radius: 14px;
 	margin-bottom: 0.75rem;
 }
 
@@ -197,25 +222,18 @@ select {
 
 .section-badge {
 	display: inline-flex;
-	padding: 0.45rem 0.8rem;
-	border: 1px solid rgba(61, 220, 132, 0.2);
-	border-radius: 999px;
-	background: rgba(61, 220, 132, 0.08);
-	color: var(--accent);
-	font-size: 0.72rem;
-	font-weight: 700;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
+	margin: 0;
+	color: var(--text-soft);
+	font-size: 0.95rem;
 }
 
 .camera-card {
 	width: min(100%, 900px);
 	padding: 0.85rem;
 	border: 1px solid var(--border-light);
-	border-radius: 16px;
+	border-radius: 14px;
 	background: var(--card-bg);
-	box-shadow: 0 0 40px rgba(47, 180, 106, 0.1);
-	backdrop-filter: blur(10px);
+
 }
 
 .camera-frame {
@@ -223,13 +241,13 @@ select {
 	overflow: hidden;
 	aspect-ratio: 16 / 9;
 	border-radius: 12px;
-	background: #000;
-	box-shadow: inset 0 0 60px rgba(31, 143, 82, 0.08);
+	background: var(--viewfinder);
 }
 
 .camera-frame.is-error {
-	background: rgba(194, 59, 59, 0.08);
-	box-shadow: inset 0 0 60px rgba(194, 59, 59, 0.1);
+	background: var(--viewfinder);
+	outline: 2px solid var(--danger);
+	outline-offset: -2px;
 }
 
 #camera-feed,
@@ -250,7 +268,7 @@ select {
 	position: absolute;
 	inset: 0;
 	place-items: center;
-	background: rgba(5, 7, 13, 0.78);
+	background: rgba(20, 26, 19, 0.72);
 	transition: opacity 0.35s ease, visibility 0.35s ease;
 }
 
@@ -263,10 +281,9 @@ select {
 .camera-message {
 	max-width: 80%;
 	padding: 0.5rem 1rem;
-	color: rgba(255, 255, 255, 0.9);
-	font-size: 1rem;
+	color: #efe9dc;
+	font-size: 0.98rem;
 	text-align: center;
-	text-shadow: 0 0 12px rgba(47, 180, 106, 0.3);
 }
 
 .fruit-selector {
@@ -287,13 +304,11 @@ select {
 	padding: 0.8rem 1.2rem;
 	border: 1px solid var(--border-light);
 	border-radius: 14px;
-	background: rgba(255, 255, 255, 0.02);
+	background: var(--card-bg);
 	color: var(--text);
 	font-size: 0.95rem;
-	font-weight: 700;
-	letter-spacing: 0.01em;
+	font-weight: 600;
 	cursor: pointer;
-	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 	transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
 
@@ -307,17 +322,14 @@ select {
 
 .fruit-option:hover,
 .fruit-option:focus-visible {
-	border-color: rgba(61, 220, 132, 0.7);
-	background: rgba(61, 220, 132, 0.08);
-	box-shadow: 0 8px 22px rgba(61, 220, 132, 0.14);
-	transform: translateY(-1px);
+	border-color: var(--accent);
 }
 
 .fruit-option[aria-pressed="true"] {
 	border-color: var(--accent);
-	background: rgba(61, 220, 132, 0.12);
-	color: var(--accent);
-	box-shadow: 0 10px 24px rgba(61, 220, 132, 0.16);
+	background: var(--accent-soft);
+	color: var(--text);
+	box-shadow: inset 0 0 0 1px var(--accent);
 }
 
 .detection-result {
@@ -328,7 +340,7 @@ select {
 	margin-top: 0.5rem;
 	padding: 1.25rem;
 	border: 1px solid var(--border-light);
-	border-radius: 16px;
+	border-radius: 14px;
 	background: var(--card-bg);
 	text-align: left;
 }
@@ -337,10 +349,8 @@ select {
 	display: block;
 	margin-bottom: 0.35rem;
 	color: var(--text-soft);
-	font-size: 0.72rem;
-	font-weight: 600;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
+	font-size: 0.85rem;
+	font-weight: 500;
 }
 
 .detection-result strong {
@@ -371,7 +381,7 @@ select {
 	height: 0.45rem;
 	margin-top: 0.65rem;
 	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.1);
+	background: var(--track);
 }
 
 .confidence-track span {
@@ -379,7 +389,7 @@ select {
 	width: 0%;
 	height: 100%;
 	border-radius: inherit;
-	background: linear-gradient(90deg, var(--success) 0%, #7fe1b1 100%);
+	background: var(--accent);
 	transition: width 0.3s ease;
 }
 
@@ -419,11 +429,9 @@ select {
 
 .detected-header h3 {
 	margin: 0 0 0.75rem;
-	color: var(--accent);
-	font-size: 0.8rem;
-	font-weight: 700;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
+	color: var(--text-soft);
+	font-size: 0.85rem;
+	font-weight: 500;
 }
 
 .detected-emoji {
@@ -432,7 +440,7 @@ select {
 	height: 72px;
 	margin-bottom: 0.75rem;
 	object-fit: contain;
-	filter: drop-shadow(0 8px 18px rgba(61, 220, 132, 0.15));
+	
 }
 
 .detected-emoji.neutral {
@@ -454,9 +462,9 @@ select {
 	margin-bottom: 0.75rem;
 	padding: 0.35rem 0.7rem;
 	border-radius: 999px;
-	background: rgba(61, 220, 132, 0.12);
+	background: var(--accent-soft);
 	color: var(--accent);
-	font-weight: 700;
+	font-weight: 600;
 }
 
 .status-block {
@@ -474,29 +482,27 @@ select {
 	justify-content: center;
 	padding: 0.45rem 0.7rem;
 	border-radius: 999px;
-	font-size: 0.72rem;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
+	font-size: 0.8rem;
+	font-weight: 600;
 }
 
 .status-badge.neutral {
-	background: rgba(18, 38, 27, 0.08);
-	color: var(--text);
+	background: var(--neutral);
+	color: var(--text-soft);
 }
 
 .status-badge.fresco {
-	background: rgba(47, 180, 106, 0.12);
+	background: var(--success-soft);
 	color: var(--success);
 }
 
 .status-badge.moderado {
-	background: rgba(184, 114, 10, 0.12);
+	background: var(--warning-soft);
 	color: var(--warning);
 }
 
 .status-badge.passado {
-	background: rgba(194, 59, 59, 0.12);
+	background: var(--danger-soft);
 	color: var(--danger);
 }
 
@@ -525,10 +531,10 @@ select {
 
 .nutrition-block h4 {
 	margin: 0 0 0.75rem;
-	color: var(--accent);
-	font-size: 0.78rem;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
+	color: var(--text);
+	font-family: var(--font-display);
+	font-size: 1.05rem;
+	font-weight: 600;
 }
 
 .nutrition-block-mobile {
@@ -542,7 +548,7 @@ select {
 	border: 1px solid var(--nutrition-border);
 	border-radius: 12px;
 	background: var(--nutrition-background);
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+	
 }
 
 .nutrition-list li {
@@ -614,7 +620,7 @@ select {
 	.mobile-shell-overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.45);
+		background: rgba(20, 26, 19, 0.45);
 		opacity: 0;
 		visibility: hidden;
 		transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -684,7 +690,7 @@ select {
 		font-size: 0.9rem;
 		font-weight: 600;
 		cursor: pointer;
-		box-shadow: 0 4px 10px rgba(18, 38, 27, 0.04);
+		
 	}
 }
 
@@ -777,8 +783,8 @@ select {
 	max-width: calc(100% - 1.5rem);
 	padding: 0.45rem 0.85rem;
 	border-radius: 999px;
-	background: rgba(5, 7, 13, 0.75);
-	color: #ffffff;
+	background: rgba(20, 26, 19, 0.8);
+	color: #efe9dc;
 	font-size: 0.85rem;
 	font-weight: 600;
 	text-align: center;
@@ -787,7 +793,7 @@ select {
 }
 
 .live-hint.is-ready {
-	background: rgba(31, 143, 82, 0.92);
+	background: #2f5d3a;
 }
 
 .live-hint[hidden] {
@@ -807,7 +813,7 @@ select {
 .action-secondary {
 	min-height: 50px;
 	padding: 0.8rem 1.4rem;
-	border-radius: 14px;
+	border-radius: 10px;
 	font: inherit;
 	font-size: 1rem;
 	font-weight: 700;
@@ -818,7 +824,7 @@ select {
 .action-primary {
 	border: 1px solid var(--accent);
 	background: var(--accent);
-	color: #07130c;
+	color: var(--on-accent);
 }
 
 .action-secondary {
@@ -852,7 +858,7 @@ select {
 	width: min(100%, 560px);
 	padding: 0.85rem;
 	border: 1px solid var(--border-light);
-	border-radius: 16px;
+	border-radius: 14px;
 	background: var(--card-bg);
 	scroll-margin-top: 1rem;
 }
@@ -915,7 +921,7 @@ select {
 	overflow: hidden;
 	height: 0.55rem;
 	border-radius: 999px;
-	background: rgba(127, 127, 127, 0.18);
+	background: var(--track);
 }
 
 .class-track span {
@@ -968,4 +974,187 @@ select {
 		grid-template-columns: 4.8rem minmax(0, 1fr) 2.6rem;
 		gap: 0.5rem;
 	}
+}
+
+/* ---------------------------------------------------------------
+   Identidade visual: peças novas
+   --------------------------------------------------------------- */
+
+/* Títulos com serifa, que lembram rótulo de mercado */
+.detection-section h2,
+.project-brand h2,
+.detected-fruit-name,
+.detection-result strong#freshness-status,
+.detection-result strong#detected-fruit {
+	font-family: var(--font-display);
+	font-weight: 600;
+	letter-spacing: -0.01em;
+}
+
+.detection-section h2 {
+	margin: 0.35rem 0 1.25rem;
+	font-size: clamp(2.1rem, 5vw, 3.2rem);
+}
+
+.detection-result strong#freshness-status,
+.detection-result strong#detected-fruit {
+	font-size: 1.45rem;
+}
+
+/* Ícones de linha no lugar dos emojis */
+.ico {
+	width: 1.2em;
+	height: 1.2em;
+	flex-shrink: 0;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.action-primary,
+.action-secondary,
+.voice-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.55rem;
+}
+
+.action-primary,
+.action-secondary {
+	font-weight: 600;
+}
+
+.action-secondary {
+	background: var(--card-bg);
+}
+
+.auto-icon {
+	color: var(--accent);
+	width: 1.25em;
+	height: 1.25em;
+}
+
+.voice-toggle {
+	background: transparent;
+	font-weight: 500;
+}
+
+.voice-toggle[aria-pressed="true"] {
+	background: var(--accent-soft);
+	color: var(--text);
+}
+
+/* Cabeçalho do celular (a barra lateral some em telas pequenas) */
+.topbar {
+	display: none;
+}
+
+@media (max-width: 1100px) {
+	.topbar {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		align-self: stretch;
+		padding-bottom: 0.9rem;
+		margin-bottom: 1.1rem;
+		border-bottom: 1px solid var(--border-light);
+	}
+
+	.topbar-logo {
+		width: 34px;
+		height: 34px;
+		border-radius: 9px;
+		object-fit: cover;
+	}
+
+	.topbar-name {
+		font-family: var(--font-display);
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
+	.detection-section {
+		align-items: stretch;
+		text-align: left;
+	}
+
+	.detection-section h2 {
+		max-width: none;
+	}
+
+	.voice-toggle {
+		align-self: center;
+	}
+}
+
+/* Visor da câmera: cantos de enquadramento em amarelo-banana */
+.camera-frame::before,
+.camera-frame::after {
+	content: "";
+	position: absolute;
+	z-index: 3;
+	width: 28px;
+	height: 28px;
+	border: 3px solid var(--highlight);
+	pointer-events: none;
+}
+
+.camera-frame::before {
+	top: 14px;
+	left: 14px;
+	border-right: 0;
+	border-bottom: 0;
+	border-top-left-radius: 6px;
+}
+
+.camera-frame::after {
+	right: 14px;
+	bottom: 14px;
+	border-left: 0;
+	border-top: 0;
+	border-bottom-right-radius: 6px;
+}
+
+/* Barras de estado mais grossas e retas */
+.class-track {
+	height: 0.7rem;
+	border-radius: 4px;
+}
+
+.confidence-track {
+	border-radius: 4px;
+}
+
+.class-row strong,
+#confidence-value,
+#pct-fresco,
+#pct-moderado,
+#pct-passado {
+	font-variant-numeric: tabular-nums;
+}
+
+.detection-result {
+	background: var(--card-bg);
+}
+
+/* Barra lateral do computador */
+.sidebar-left {
+	border-right: 1px solid var(--border-light);
+}
+
+.project-brand p {
+	font-size: 0.85rem;
+}
+
+.detected-emoji.neutral {
+	opacity: 0.55;
+	filter: grayscale(1);
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
 }

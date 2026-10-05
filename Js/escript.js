@@ -474,7 +474,8 @@ function speak(text) {
 
 function updateVoiceButton() {
 	voiceToggle.setAttribute("aria-pressed", voiceOn);
-	voiceToggle.textContent = voiceOn ? "🔊 Falar resultado: ligado" : "🔈 Falar resultado: desligado";
+	const voiceLabel = voiceToggle.querySelector(".voice-label");
+	(voiceLabel ?? voiceToggle).textContent = voiceOn ? "Falar resultado: ligado" : "Falar resultado: desligado";
 }
 
 if (!("speechSynthesis" in window)) {
@@ -490,15 +491,16 @@ voiceToggle.addEventListener("click", () => {
 // ---------------------------------------------------------------
 // Cartão com a foto e todas as informações (imagem para baixar/compartilhar)
 // ---------------------------------------------------------------
+// Mesmas cores da página (papel de feira, tinta verde, banana e terracota)
 const CARD_COLORS = {
-	background: "#0d1117",
-	text: "#ffffff",
-	soft: "rgba(255, 255, 255, 0.7)",
-	track: "rgba(255, 255, 255, 0.12)",
-	accent: "#3ddc84",
-	fresco: "#3ddc84",
-	moderado: "#f2c94c",
-	passado: "#eb5757",
+	background: "#f4efe4",
+	text: "#1f2a1e",
+	soft: "#5e6656",
+	track: "#e3dac8",
+	accent: "#e8b923",
+	fresco: "#3f7d3c",
+	moderado: "#c98a12",
+	passado: "#b5482b",
 };
 
 // Quebra o texto em linhas que cabem na largura e devolve a altura usada
@@ -569,7 +571,8 @@ function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning 
 	card.width = W;
 	card.height = photoH + panelH;
 	const ctx = card.getContext("2d");
-	const font = (size, weight = 400) => `${weight} ${size}px Inter, Arial, sans-serif`;
+	const font = (size, weight = 400) => `${weight} ${size}px "Work Sans", Arial, sans-serif`;
+	const serif = (size, weight = 600) => `${weight} ${size}px Fraunces, Georgia, serif`;
 
 	ctx.fillStyle = CARD_COLORS.background;
 	ctx.fillRect(0, 0, W, card.height);
@@ -586,10 +589,10 @@ function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning 
 	let y = photoH + 70;
 
 	// Cabeçalho: marca e data
-	ctx.fillStyle = CARD_COLORS.accent;
-	ctx.font = font(26, 700);
+	ctx.fillStyle = CARD_COLORS.fresco;
+	ctx.font = serif(30);
 	ctx.textAlign = "left";
-	ctx.fillText("FRESH FOOD", PAD, y);
+	ctx.fillText("Fresh Food", PAD, y);
 	ctx.fillStyle = CARD_COLORS.soft;
 	ctx.font = font(26);
 	ctx.textAlign = "right";
@@ -599,7 +602,7 @@ function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning 
 	y += 90;
 	ctx.textAlign = "left";
 	ctx.fillStyle = CARD_COLORS.text;
-	ctx.font = font(72, 700);
+	ctx.font = serif(76);
 	const fruitName = fruitNames[fruitKey];
 	ctx.fillText(fruitName, PAD, y);
 	const nameWidth = ctx.measureText(fruitName).width;
@@ -810,7 +813,7 @@ async function analyzePhoto() {
 async function runAnalysis(prepare) {
 	captureButton.disabled = true;
 	galleryButton.disabled = true;
-	const oldText = captureButton.textContent;
+	const oldText = captureButton.innerHTML;
 	captureButton.textContent = "Analisando...";
 	try {
 		await prepare();
@@ -819,7 +822,7 @@ async function runAnalysis(prepare) {
 		console.error(error);
 		showNotice(errorMessages[error.name] ?? "Não foi possível analisar a foto. Tente de novo.");
 	} finally {
-		captureButton.textContent = oldText;
+		captureButton.innerHTML = oldText;
 		captureButton.disabled = !cameraStarted || !detector;
 		galleryButton.disabled = false;
 	}
