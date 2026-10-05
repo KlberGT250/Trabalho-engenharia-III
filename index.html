@@ -41,11 +41,6 @@
                     <span id="status-badge" class="status-badge neutral">Aguardando</span>
                     <p id="freshness-recommendation">Aponte a câmera para uma fruta</p>
                 </div>
-
-                <div class="nutrition-block" id="nutrition-block" hidden>
-                    <h4>Valores nutricionais (por 100g)</h4>
-                    <ul id="nutrition-list" class="nutrition-list"></ul>
-                </div>
             </div>
         </aside>
 
@@ -143,10 +138,48 @@
                         </div>
                     </section>
 
-                    <div class="nutrition-block nutrition-block-mobile" id="nutrition-block-mobile" hidden>
-                        <h4>Valores nutricionais (por 100g)</h4>
-                        <ul id="nutrition-list-mobile" class="nutrition-list"></ul>
-                    </div>
+                    <section id="explain-panel" class="explain-panel" aria-labelledby="explain-title" hidden>
+                        <h3 id="explain-title">Por que deu esse resultado</h3>
+                        <p class="explain-lead">O sistema recorta a fruta, olha a cor de cada ponto da casca e um classificador transforma essas medidas na chance de ela estar estragada.</p>
+
+                        <div class="explain-images">
+                            <figure>
+                                <canvas id="explain-crop" width="160" height="160" aria-label="Recorte da fruta usado na análise"></canvas>
+                                <figcaption>O que o sistema analisou</figcaption>
+                            </figure>
+                            <figure>
+                                <canvas id="explain-map" width="160" height="160" aria-label="Mapa com a classificação de cada ponto da casca"></canvas>
+                                <figcaption>Como cada ponto foi classificado</figcaption>
+                            </figure>
+                        </div>
+
+                        <div class="explain-block">
+                            <span class="result-label">Do que a casca é feita</span>
+                            <div id="explain-stack" class="explain-stack" role="img" aria-label="Composição da casca"></div>
+                            <ul id="explain-legend" class="explain-legend"></ul>
+                        </div>
+
+                        <div class="explain-block">
+                            <span class="result-label">Chance de estar estragada</span>
+                            <div class="explain-scale">
+                                <div class="scale-zones" aria-hidden="true">
+                                    <span class="zone-fresco">Fresco</span>
+                                    <span class="zone-moderado">Moderado</span>
+                                    <span class="zone-passado">Passado</span>
+                                </div>
+                                <span id="scale-marker" class="scale-marker"></span>
+                            </div>
+                            <div class="scale-ticks" aria-hidden="true"><span>0%</span><span>40%</span><span>70%</span><span>100%</span></div>
+                            <p id="explain-chance" class="explain-note"></p>
+                        </div>
+
+                        <div class="explain-block">
+                            <span class="result-label">O que mais pesou na decisão</span>
+                            <div class="factor-axis" aria-hidden="true"><span>← puxou para fresco</span><span>empurrou para passado →</span></div>
+                            <ul id="explain-factors" class="explain-factors"></ul>
+                            <p class="explain-note">Cada medida é comparada com a média das fotos usadas no treino. Quanto maior a barra, mais aquela medida pesou.</p>
+                        </div>
+                    </section>
                 </div>
             </section>
         </main>

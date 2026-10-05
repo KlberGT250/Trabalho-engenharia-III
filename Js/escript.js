@@ -30,38 +30,6 @@ const fruitNames = {
 	orange: "Laranja",
 };
 
-const fruitData = {
-	banana: {
-		nutrition: {
-			Calorias: "89 kcal",
-			"Carboidratos": "22.8 g",
-			"Proteínas": "1.1 g",
-			"Fibras": "2.6 g",
-			"Vitamina C": "8.7 mg",
-			"Potássio": "358 mg",
-		},
-	},
-	apple: {
-		nutrition: {
-			Calorias: "52 kcal",
-			"Carboidratos": "13.8 g",
-			"Proteínas": "0.3 g",
-			"Fibras": "2.4 g",
-			"Vitamina C": "4.6 mg",
-			"Potássio": "107 mg",
-		},
-	},
-	orange: {
-		nutrition: {
-			Calorias: "47 kcal",
-			"Carboidratos": "11.8 g",
-			"Proteínas": "0.9 g",
-			"Fibras": "2.4 g",
-			"Vitamina C": "53.2 mg",
-			"Potássio": "181 mg",
-		},
-	},
-};
 
 const fruitImages = {
 	banana: "./IMG/banana.png",
@@ -161,14 +129,44 @@ const MAX_MISSES = 3;
 // Limites de luz: abaixo ou acima disso o resultado não é confiável
 const LIGHT_MIN = 0.22;
 const LIGHT_MAX = 0.88;
+// Categorias de cada ponto da casca, com a cor usada no mapa e na barra
+const CATEGORIAS = [
+	{ key: "viva", nome: "Cor viva (casca saudável)", cor: null }, // usa a cor da fruta (abaixo)
+	{ key: "apagado", nome: "Cor apagada", cor: [214, 196, 146] },
+	{ key: "marrom", nome: "Manchas marrons", cor: [140, 86, 42] },
+	{ key: "mofo", nome: "Acinzentado ou esbranquiçado (mofo)", cor: [168, 176, 186] },
+	{ key: "escuro", nome: "Partes muito escuras", cor: [40, 32, 28] },
+];
+// Cor viva de cada fruta no mapa, para o mapa lembrar a fruta de verdade
+const COR_VIVA_FRUTA = { banana: [236, 196, 48], apple: [196, 52, 44], orange: [236, 132, 30] };
+const corCategoria = (cat, fruitKey) => cat.cor ?? COR_VIVA_FRUTA[fruitKey];
+const CATEGORIA_INDICE = Object.fromEntries(CATEGORIAS.map((c, i) => [c.key, i]));
+
+// Nome de cada uma das 8 medidas, na ordem do classificador
+const NOMES_MEDIDAS = [
+	"Cor viva",
+	"Manchas marrons",
+	"Partes acinzentadas (mofo)",
+	"Partes muito escuras",
+	"Cor apagada",
+	"Intensidade da cor",
+	"Brilho da casca",
+	"Textura da casca",
+];
+
 // Cor usada para pintar os defeitos por cima da imagem (RGBA)
 const SPOT_COLOR = [255, 64, 64, 115];
 
 const statusBadge = document.querySelector("#status-badge");
 const recommendationText = document.querySelector("#freshness-recommendation");
-const nutritionBlocks = [document.querySelector("#nutrition-block"), document.querySelector("#nutrition-block-mobile")].filter(Boolean);
-const nutritionalList = document.querySelector("#nutrition-list");
-const nutritionalListMobile = document.querySelector("#nutrition-list-mobile");
+const explainPanel = document.querySelector("#explain-panel");
+const explainCrop = document.querySelector("#explain-crop");
+const explainMap = document.querySelector("#explain-map");
+const explainStack = document.querySelector("#explain-stack");
+const explainLegend = document.querySelector("#explain-legend");
+const explainChance = document.querySelector("#explain-chance");
+const explainFactors = document.querySelector("#explain-factors");
+const scaleMarker = document.querySelector("#scale-marker");
 const fruitStateEmpty = document.querySelector("#rsEmpty");
 const fruitStateFilled = document.querySelector("#rsFruit");
 const detectedEmoji = document.querySelector("#detected-emoji-filled");
@@ -269,6 +267,8 @@ function measureFruit(imageData, fruitKey) {
 	}
 
 	const mask = new ImageData(N, N);
+	// Mapa de categorias: 255 = ponto fora da conta (fundo, reflexo ou fora do oval)
+	const categoryMap = new Uint8Array(N * N).fill(255);
 	const c = (N - 1) / 2;
 	const r = (N / 2) * OVAL;
 	const count = { viva: 0, marrom: 0, mofo: 0, escuro: 0, apagado: 0 };
@@ -299,12 +299,15 @@ function measureFruit(imageData, fruitKey) {
 			if (y < N - 1) texSum += Math.abs(val[i + N] - v);
 
 			const isViva = inHueRanges(h, cor.hue) && s > cor.satMin && v > cor.valMin;
-			let defeito = false;
-			if (isViva) count.viva++;
-			else if (inHueRanges(h, [[0, 50], [340, 360]]) && s >= 0.2 && v < 0.55) { count.marrom++; defeito = true; }
-			else if (s < 0.2 && v >= 0.3) { count.mofo++; defeito = true; }
-			else if (v < 0.25) { count.escuro++; defeito = true; }
-			else count.apagado++;
+			let categoria;
+			if (isViva) categoria = "viva";
+			else if (inHueRanges(h, [[0, 50], [340, 360]]) && s >= 0.2 && v < 0.55) categoria = "marrom";
+			else if (s < 0.2 && v >= 0.3) categoria = "mofo";
+			else if (v < 0.25) categoria = "escuro";
+			else categoria = "apagado";
+			count[categoria]++;
+			categoryMap[i] = CATEGORIA_INDICE[categoria];
+			const defeito = categoria === "marrom" || categoria === "mofo" || categoria === "escuro";
 
 			if (defeito) {
 				mask.data[i * 4] = SPOT_COLOR[0];
@@ -329,6 +332,8 @@ function measureFruit(imageData, fruitKey) {
 		],
 		brightness: rawCount ? rawValSum / rawCount : 0,
 		mask,
+		categoryMap,
+		counts: count,
 	};
 }
 
@@ -362,12 +367,16 @@ function freshnessFromChance(chance) {
 
 // Analisa a fruta dentro da caixa encontrada pelo COCO-SSD
 function analyzeFruit(fruitKey, bbox) {
-	const measured = measureFruit(shrinkRegion(bbox), fruitKey);
+	const crop = shrinkRegion(bbox);
+	const measured = measureFruit(crop, fruitKey);
 	const chance = rottenChance(measured.features, fruitKey);
 	const freshness = freshnessFromChance(chance);
 	freshness.features = measured.features;
 	freshness.fruitKey = fruitKey;
 	freshness.avg.brightness = measured.brightness;
+	freshness.crop = crop;
+	freshness.categoryMap = measured.categoryMap;
+	freshness.counts = measured.counts;
 	return { freshness, mask: measured.mask };
 }
 
@@ -391,19 +400,95 @@ function lightMessage(brightness) {
 // ---------------------------------------------------------------
 // Painel lateral e painel de resultado
 // ---------------------------------------------------------------
-function fillNutrition(fruitKey) {
-	const nutrition = fruitData[fruitKey]?.nutrition ?? fruitData.orange.nutrition;
-	const lists = [nutritionalList, nutritionalListMobile].filter(Boolean);
+// ---------------------------------------------------------------
+// Painel "Por que deu esse resultado"
+// ---------------------------------------------------------------
 
-	lists.forEach((list) => {
-		list.innerHTML = "";
-		Object.entries(nutrition).forEach(([label, value]) => {
-			const item = document.createElement("li");
-			item.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
-			list.appendChild(item);
-		});
+// Quanto cada medida empurrou a decisão (é a conta da regressão logística, parte por parte)
+function contributions(freshness) {
+	const m = MODELO[freshness.fruitKey];
+	return freshness.features.map((f, k) => ({
+		nome: NOMES_MEDIDAS[k],
+		valor: m.pesos[k] * ((f - m.media[k]) / m.desvio[k]),
+	}));
+}
+
+function drawExplainImages(freshness) {
+	const N = LADO_ANALISE;
+	const c = (N - 1) / 2;
+	const r = (N / 2) * OVAL;
+
+	// Recorte: fora do oval fica apagado, para mostrar a área que conta
+	const crop = new ImageData(new Uint8ClampedArray(freshness.crop.data), N, N);
+	const map = new ImageData(N, N);
+	for (let y = 0; y < N; y++) {
+		for (let x = 0; x < N; x++) {
+			const i = y * N + x;
+			const fora = (x - c) ** 2 + (y - c) ** 2 > r * r;
+			if (fora) crop.data[i * 4 + 3] = 70;
+			const cat = freshness.categoryMap[i];
+			if (cat === 255) continue;
+			const [cr, cg, cb] = corCategoria(CATEGORIAS[cat], freshness.fruitKey);
+			map.data[i * 4] = cr;
+			map.data[i * 4 + 1] = cg;
+			map.data[i * 4 + 2] = cb;
+			map.data[i * 4 + 3] = 255;
+		}
+	}
+	explainCrop.getContext("2d").putImageData(crop, 0, 0);
+	explainMap.getContext("2d").putImageData(map, 0, 0);
+}
+
+function fillExplain(freshness) {
+	if (!explainPanel || !freshness.crop) return;
+	drawExplainImages(freshness);
+
+	// Barra empilhada e legenda com a porcentagem de cada categoria
+	const total = Math.max(1, Object.values(freshness.counts).reduce((a, b) => a + b, 0));
+	explainStack.innerHTML = "";
+	explainLegend.innerHTML = "";
+	CATEGORIAS.forEach((cat) => {
+		const { key, nome } = cat;
+		const pct = (freshness.counts[key] / total) * 100;
+		const rgb = `rgb(${corCategoria(cat, freshness.fruitKey).join(",")})`;
+		if (pct >= 0.5) {
+			const part = document.createElement("span");
+			part.style.width = `${pct}%`;
+			part.style.background = rgb;
+			part.title = `${nome}: ${Math.round(pct)}%`;
+			explainStack.appendChild(part);
+		}
+		const item = document.createElement("li");
+		item.innerHTML = `<i style="background:${rgb}"></i><span>${nome}</span><strong>${Math.round(pct)}%</strong>`;
+		explainLegend.appendChild(item);
 	});
-	nutritionBlocks.forEach((block) => { block.hidden = false; });
+
+	// Régua com a chance de estar estragada
+	const chance = Math.round(freshness.chance * 100);
+	scaleMarker.style.left = `${chance}%`;
+	scaleMarker.dataset.value = `${chance}%`;
+	scaleMarker.classList.toggle("near-start", chance < 8);
+	scaleMarker.classList.toggle("near-end", chance > 92);
+	explainChance.textContent = `A chance calculada foi ${chance}%. Abaixo de 40% a fruta é considerada fresca, entre 40% e 70% moderada e acima de 70% passada.`;
+
+	// As 4 medidas que mais pesaram, com barra para os dois lados
+	const fatores = contributions(freshness)
+		.sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
+		.slice(0, 4);
+	const maior = Math.max(...fatores.map((f) => Math.abs(f.valor)), 0.01);
+	explainFactors.innerHTML = "";
+	fatores.forEach(({ nome, valor }) => {
+		const lado = valor >= 0 ? "passado" : "fresco";
+		const largura = (Math.abs(valor) / maior) * 50;
+		const item = document.createElement("li");
+		item.innerHTML = `
+			<span class="factor-name">${nome}</span>
+			<span class="factor-track"><span class="factor-bar ${lado}" style="width:${largura}%"></span></span>
+			<span class="factor-side ${lado}">${lado === "passado" ? "empurrou para passado" : "puxou para fresco"}</span>`;
+		explainFactors.appendChild(item);
+	});
+
+	explainPanel.hidden = false;
 }
 
 function setConfidence(percent) {
@@ -430,7 +515,7 @@ function resetSidebarState(message = "Aguardando") {
 	setConfidence(0);
 	setClassBars(null);
 	freshnessReason.textContent = "O motivo do resultado aparece aqui.";
-	nutritionBlocks.forEach((block) => { block.hidden = true; });
+	if (explainPanel) explainPanel.hidden = true;
 	detectedFruit.textContent = message;
 	freshnessStatus.textContent = "Aguardando";
 	freshnessStatus.className = "status-fresh";
@@ -456,7 +541,7 @@ function renderFruitState(fruitKey, freshness, detectionConfidence) {
 	freshnessReason.textContent = buildReason(freshness);
 	setClassBars(avg);
 	setConfidence(detectionConfidence ?? 0);
-	fillNutrition(fruitKey);
+	fillExplain(freshness);
 }
 
 // ---------------------------------------------------------------
