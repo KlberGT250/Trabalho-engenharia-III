@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./Assets/css/stayle.css">
-    <link rel="icon" href="./IMG/logo.png" type="image/png">
+    <link rel="icon" href="./IMG/icones/icone-192.png" type="image/png">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <meta name="theme-color" content="#2f5d3a">
+    <link rel="apple-touch-icon" href="./IMG/icones/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Fresh Food">
+    <meta name="description" content="Fotografe uma banana, maçã ou laranja e descubra se está fresca, moderada ou passada. Funciona sem internet.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -52,6 +58,12 @@
                         <span class="topbar-name">Fresh Food</span>
                     </header>
                     <p class="section-badge">Banana, maçã ou laranja</p>
+                    <div class="app-status">
+                        <span id="offline-status" class="offline-status" role="status" hidden></span>
+                        <button id="install-button" class="install-button" type="button" hidden>
+                            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5M5 19h14"/></svg>Instalar no celular
+                        </button>
+                    </div>
                     <h2 id="detection-title">Fotografe uma fruta</h2>
 
                     <div class="camera-card">
@@ -223,28 +235,6 @@
                             <li><strong>Foto tremida:</strong> marca 56,9% das fotos com leve desfoque e só 2,6% das fotos nítidas.</li>
                             <li><strong>Foto fora do padrão:</strong> marca 3,9% das fotos normais e pega a fruta errada (por exemplo, maçã analisada como banana) em 22,5% a 53,8% dos casos. É um aviso de "desconfie", não um detector perfeito.</li>
                         </ul>
-
-                        <h4>Comparação com o FreshNet</h4>
-                        <div class="table-wrap">
-                            <table class="data-table">
-                                <thead><tr><th scope="col"></th><th scope="col">FreshNet (artigo)</th><th scope="col">Fresh Food</th></tr></thead>
-                                <tbody>
-                                    <tr><th scope="row">Produtos</th><td>5 vegetais</td><td>3 frutas</td></tr>
-                                    <tr><th scope="row">Fotos de teste</th><td>3.500 (todas)</td><td>570 (fora do treino)</td></tr>
-                                    <tr><th scope="row">Modelo</th><td>MobileNetV3-Small (rede neural)</td><td>8 medidas de cor e textura + regressão logística</td></tr>
-                                    <tr><th scope="row">Precisa de GPU para treinar</th><td>Sim (Tesla T4)</td><td>Não (roda em poucos minutos num notebook comum)</td></tr>
-                                    <tr><th scope="row">Acurácia</th><td>92,7%</td><td>94,7%</td></tr>
-                                    <tr><th scope="row">Precisão</th><td>91,4%</td><td>95,0%</td></tr>
-                                    <tr><th scope="row">Recall</th><td>92,0%</td><td>94,5%</td></tr>
-                                    <tr><th scope="row">F1</th><td>91,6%</td><td>94,7%</td></tr>
-                                    <tr><th scope="row">Tempo por foto</th><td>380 ms (Raspberry Pi 4)</td><td id="my-timing">analise uma foto para medir</td></tr>
-                                    <tr><th scope="row">Detecção de anomalia</th><td>Autoencoder</td><td>Distância de Mahalanobis</td></tr>
-                                    <tr><th scope="row">Explicação do resultado</th><td>Grad-CAM</td><td>Mapa da casca e peso de cada medida</td></tr>
-                                    <tr><th scope="row">Onde roda</th><td>Raspberry Pi e Android (app)</td><td>Qualquer navegador, sem instalar</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="table-note">Os números não são diretamente comparáveis: os produtos, as fotos e as classes são diferentes. A comparação mostra que um modelo simples e explicável chega a um desempenho na mesma faixa, sem precisar de rede neural treinada. As fotos de teste são de fundo claro e bem iluminadas; em fotos reais de celular o acerto pode ser menor.</p>
                     </details>
                 </div>
             </section>
@@ -252,8 +242,9 @@
 
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
+    <!-- Bibliotecas guardadas no próprio projeto (antes vinham da internet), para funcionar offline -->
+    <script src="./Js/vendor/tf.min.js"></script>
+    <script src="./Js/vendor/coco-ssd.min.js"></script>
     <script src="./Js/escript.js"></script>
 </body>
 </html>

@@ -1563,3 +1563,62 @@ select {
 .data-table tbody th {
 	min-width: 7.5rem;
 }
+
+/* ---------------------------------------------------------------
+   Modo sem internet
+   --------------------------------------------------------------- */
+.app-status {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	margin-top: 0.6rem;
+}
+
+
+.offline-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	font-size: 0.85rem;
+	color: var(--text-soft);
+}
+
+.offline-status[hidden],
+.install-button[hidden] {
+	display: none;
+}
+
+.offline-status::before {
+	content: "";
+	width: 0.55rem;
+	height: 0.55rem;
+	border-radius: 50%;
+	background: var(--text-soft);
+}
+
+.offline-status.is-ready::before { background: var(--success); }
+.offline-status.is-offline::before { background: var(--warning); }
+
+.install-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.45rem 0.85rem;
+	border: 1px solid var(--accent);
+	border-radius: 999px;
+	background: transparent;
+	color: var(--accent);
+	font: inherit;
+	font-size: 0.85rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+	.app-status {
+		justify-content: flex-start;
+		margin: 0.4rem 0 0.6rem;
+	}
+}

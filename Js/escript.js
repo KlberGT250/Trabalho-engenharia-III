@@ -220,7 +220,6 @@ const explainFactors = document.querySelector("#explain-factors");
 const scaleMarker = document.querySelector("#scale-marker");
 const explainChecks = document.querySelector("#explain-checks");
 const resultWarnings = document.querySelector("#result-warnings");
-const myTiming = document.querySelector("#my-timing");
 const fruitStateEmpty = document.querySelector("#rsEmpty");
 const fruitStateFilled = document.querySelector("#rsFruit");
 const detectedEmoji = document.querySelector("#detected-emoji-filled");
@@ -578,7 +577,6 @@ function fillChecks(freshness) {
 		item.className = "check-tempo";
 		item.innerHTML = `<span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 9.5V13l2.5 1.5M10 3h4"/></svg></span><span><strong>Tempo</strong> ${fmt(deteccao + analise)} ms (achar a fruta ${fmt(deteccao)} ms + analisar ${fmt(analise)} ms).</span>`;
 		explainChecks.appendChild(item);
-		if (myTiming) myTiming.textContent = `${fmt(deteccao + analise)} ms`;
 	}
 }
 
@@ -1314,4 +1312,70 @@ document.addEventListener("keydown", (event) => {
 	if (event.key === "Escape") {
 		closeMobileSidebars();
 	}
+});
+
+// ---------------------------------------------------------------
+// Funcionar sem internet (app instalável)
+// O service worker (sw.js) guarda o site e o modelo no aparelho.
+// ---------------------------------------------------------------
+const offlineStatus = document.querySelector("#offline-status");
+const installButton = document.querySelector("#install-button");
+let modeloGuardado = false;
+
+function updateOfflineStatus() {
+	if (!offlineStatus) return;
+	offlineStatus.classList.remove("is-ready", "is-offline");
+	if (!navigator.onLine) {
+		offlineStatus.textContent = modeloGuardado ? "Sem internet: usando a versão guardada" : "Sem internet";
+		offlineStatus.classList.add("is-offline");
+		offlineStatus.hidden = false;
+	} else if (modeloGuardado) {
+		offlineStatus.textContent = "Pronto para usar sem internet";
+		offlineStatus.classList.add("is-ready");
+		offlineStatus.hidden = false;
+	} else {
+		offlineStatus.hidden = true;
+	}
+}
+
+if ("serviceWorker" in navigator) {
+	window.addEventListener("load", async () => {
+		try {
+			await navigator.serviceWorker.register("./sw.js");
+			const registration = await navigator.serviceWorker.ready;
+			navigator.serviceWorker.addEventListener("message", (event) => {
+				if (event.data?.tipo === "modelo") {
+					modeloGuardado = event.data.pronto;
+					updateOfflineStatus();
+				}
+			});
+			registration.active?.postMessage("modelo-pronto?");
+		} catch (error) {
+			console.warn("Não foi possível ativar o modo sem internet", error);
+		}
+	});
+}
+
+window.addEventListener("online", updateOfflineStatus);
+window.addEventListener("offline", updateOfflineStatus);
+updateOfflineStatus();
+
+// Botão "Instalar no celular" (aparece no Chrome/Android quando o site pode ser instalado)
+let installPrompt = null;
+window.addEventListener("beforeinstallprompt", (event) => {
+	event.preventDefault();
+	installPrompt = event;
+	if (installButton) installButton.hidden = false;
+});
+
+installButton?.addEventListener("click", async () => {
+	if (!installPrompt) return;
+	installPrompt.prompt();
+	await installPrompt.userChoice;
+	installPrompt = null;
+	installButton.hidden = true;
+});
+
+window.addEventListener("appinstalled", () => {
+	if (installButton) installButton.hidden = true;
 });
