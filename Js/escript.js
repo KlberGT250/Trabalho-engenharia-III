@@ -113,6 +113,57 @@ const MODELO = {
 	},
 };
 
+// Detecção de foto fora do padrão (versão simples da "detecção de anomalia" do FreshNet).
+// Mede a distância de Mahalanobis entre as 8 medidas da foto e as fotos de calibração.
+// Se passar do limite, a foto é diferente do que o sistema aprendeu e o resultado merece desconfiança.
+// O limite deixa passar 97,5% das fotos normais. Gerado por Docs/treino/avaliar_metricas.py
+const ANOMALIA = {
+	banana: {
+		limite: 4.204,
+		inversa: [
+			[12.8369, 5.40255, 4.43906, 1.13844, 4.24819, -1.50612, -2.10909, 0.24362],
+			[5.40255, 6.10123, 3.23399, 1.89363, 2.20732, -0.11008, 3.20064, -0.05404],
+			[4.43906, 3.23399, 4.91336, 1.50361, 2.03147, 2.70798, 0.26276, -0.16573],
+			[1.13844, 1.89363, 1.50361, 2.30206, 0.64167, 1.15451, 1.79421, -0.01501],
+			[4.24819, 2.20732, 2.03147, 0.64167, 2.42141, 0.09215, -0.60095, -0.3381],
+			[-1.50612, -0.11008, 2.70798, 1.15451, 0.09215, 5.29137, -0.7217, -0.29921],
+			[-2.10909, 3.20064, 0.26276, 1.79421, -0.60095, -0.7217, 7.82848, 1.22659],
+			[0.24362, -0.05404, -0.16573, -0.01501, -0.3381, -0.29921, 1.22659, 1.78446],
+		],
+	},
+	apple: {
+		limite: 5.345,
+		inversa: [
+			[10.2946, 3.14416, 1.43896, 0.74053, 9.0226, -0.22601, 0.24015, 0.15011],
+			[3.14416, 2.71262, 0.39901, 0.21418, 2.34058, 0.10562, 1.1628, -0.22031],
+			[1.43896, 0.39901, 1.89238, 0.14409, 1.40343, 1.00902, 0.2825, -0.05439],
+			[0.74053, 0.21418, 0.14409, 1.24299, 0.5845, 0.37151, 0.33576, -0.06959],
+			[9.0226, 2.34058, 1.40343, 0.5845, 9.28274, 0.00514, -0.72063, -0.07203],
+			[-0.22601, 0.10562, 1.00902, 0.37151, 0.00514, 1.76967, 0.16958, -0.13096],
+			[0.24015, 1.1628, 0.2825, 0.33576, -0.72063, 0.16958, 2.31266, 0.38764],
+			[0.15011, -0.22031, -0.05439, -0.06959, -0.07203, -0.13096, 0.38764, 1.23277],
+		],
+	},
+	orange: {
+		limite: 5.705,
+		inversa: [
+			[11.864, 1.66731, 5.05799, 0.09759, 7.10715, -1.91154, -0.48144, 0.08988],
+			[1.66731, 1.47798, 1.06859, 0.0787, 1.2361, -0.27897, 0.66, -0.45219],
+			[5.05799, 1.06859, 7.0386, 0.54229, 3.87274, 3.54924, 0.54546, 0.14734],
+			[0.09759, 0.0787, 0.54229, 1.12123, 0.24074, 0.30634, 0.65038, 0.05587],
+			[7.10715, 1.2361, 3.87274, 0.24074, 5.61959, -0.30284, 0.02616, -0.15481],
+			[-1.91154, -0.27897, 3.54924, 0.30634, -0.30284, 5.44548, 0.04594, 0.40113],
+			[-0.48144, 0.66, 0.54546, 0.65038, 0.02616, 0.04594, 2.64413, 0.76797],
+			[0.08988, -0.45219, 0.14734, 0.05587, -0.15481, 0.40113, 0.76797, 1.60474],
+		],
+	},
+};
+
+// Nitidez mínima (variância do Laplaciano numa versão 256x256 da fruta).
+// Calibrado no dataset: marca 2,6% das fotos nítidas e 57% das fotos levemente borradas.
+const LADO_NITIDEZ = 256;
+const LIMITE_NITIDEZ = 12;
+
 // Textura a partir da qual a casca é considerada irregular (meio-termo entre fresca e estragada)
 const TEXTURA_IRREGULAR = { banana: 0.058, apple: 0.037, orange: 0.031 };
 
@@ -167,6 +218,9 @@ const explainLegend = document.querySelector("#explain-legend");
 const explainChance = document.querySelector("#explain-chance");
 const explainFactors = document.querySelector("#explain-factors");
 const scaleMarker = document.querySelector("#scale-marker");
+const explainChecks = document.querySelector("#explain-checks");
+const resultWarnings = document.querySelector("#result-warnings");
+const myTiming = document.querySelector("#my-timing");
 const fruitStateEmpty = document.querySelector("#rsEmpty");
 const fruitStateFilled = document.querySelector("#rsFruit");
 const detectedEmoji = document.querySelector("#detected-emoji-filled");
@@ -365,6 +419,57 @@ function freshnessFromChance(chance) {
 	return { key, state: statusStates[key], percent: Math.round(avg[key]), avg, chance };
 }
 
+// Canvas para medir a nitidez (foto tremida ou desfocada)
+const sharpCanvas = document.createElement("canvas");
+sharpCanvas.width = LADO_NITIDEZ;
+sharpCanvas.height = LADO_NITIDEZ;
+const sharpContext = sharpCanvas.getContext("2d", { willReadFrequently: true });
+
+// Nitidez: aplica o filtro Laplaciano (realça bordas) e mede a variação.
+// Foto borrada quase não tem bordas, então a variação fica baixa.
+function measureSharpness(bbox) {
+	const N = LADO_NITIDEZ;
+	const [x, y, w, h] = bbox;
+	sharpContext.imageSmoothingQuality = "high";
+	sharpContext.drawImage(photoCanvas, x, y, w, h, 0, 0, N, N);
+	const data = sharpContext.getImageData(0, 0, N, N).data;
+	const gray = new Float32Array(N * N);
+	for (let i = 0; i < N * N; i++) {
+		gray[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+	}
+	const c = (N - 1) / 2;
+	const r = (N / 2) * OVAL;
+	let n = 0;
+	let sum = 0;
+	let sumSq = 0;
+	for (let yy = 1; yy < N - 1; yy++) {
+		for (let xx = 1; xx < N - 1; xx++) {
+			if ((xx - c) ** 2 + (yy - c) ** 2 > r * r) continue;
+			const i = yy * N + xx;
+			if (gray[i] > 237) continue; // fundo branco não conta
+			const lap = gray[i - 1] + gray[i + 1] + gray[i - N] + gray[i + N] - 4 * gray[i];
+			n++;
+			sum += lap;
+			sumSq += lap * lap;
+		}
+	}
+	if (n < 100) return 0;
+	const mean = sum / n;
+	return sumSq / n - mean * mean;
+}
+
+// Distância entre as medidas da foto e o "normal" do treino
+function outlierDistance(features, fruitKey) {
+	const m = MODELO[fruitKey];
+	const z = features.map((f, k) => (f - m.media[k]) / m.desvio[k]);
+	const inv = ANOMALIA[fruitKey].inversa;
+	let d = 0;
+	for (let i = 0; i < 8; i++) {
+		for (let j = 0; j < 8; j++) d += z[i] * inv[i][j] * z[j];
+	}
+	return Math.sqrt(Math.max(0, d));
+}
+
 // Analisa a fruta dentro da caixa encontrada pelo COCO-SSD
 function analyzeFruit(fruitKey, bbox) {
 	const crop = shrinkRegion(bbox);
@@ -375,6 +480,9 @@ function analyzeFruit(fruitKey, bbox) {
 	freshness.fruitKey = fruitKey;
 	freshness.avg.brightness = measured.brightness;
 	freshness.crop = crop;
+	freshness.sharpness = measureSharpness(bbox);
+	freshness.outlier = outlierDistance(measured.features, fruitKey);
+	freshness.outlierLimit = ANOMALIA[fruitKey].limite;
 	freshness.categoryMap = measured.categoryMap;
 	freshness.counts = measured.counts;
 	return { freshness, mask: measured.mask };
@@ -391,6 +499,18 @@ function buildReason(freshness) {
 	return `${partes.join(", ")} e ${casca}. Chance de estar estragada: ${pct(freshness.chance)}%.`;
 }
 
+function sharpnessMessage(sharpness) {
+	if (sharpness < LIMITE_NITIDEZ) return "Atenção: a foto parece tremida ou fora de foco. Tire de novo com a câmera parada.";
+	return null;
+}
+
+function outlierMessage(freshness) {
+	if (freshness.outlier > freshness.outlierLimit) {
+		return "Atenção: esta foto é bem diferente das que o sistema aprendeu (fundo, luz, ângulo ou outra fruta). O resultado pode não ser confiável.";
+	}
+	return null;
+}
+
 function lightMessage(brightness) {
 	if (brightness < LIGHT_MIN) return "Atenção: pouca luz na foto, o resultado pode não ser confiável.";
 	if (brightness > LIGHT_MAX) return "Atenção: luz forte demais na foto, o resultado pode não ser confiável.";
@@ -403,6 +523,64 @@ function lightMessage(brightness) {
 // ---------------------------------------------------------------
 // Painel "Por que deu esse resultado"
 // ---------------------------------------------------------------
+
+// Avisos que aparecem junto do resultado
+function showWarnings(list) {
+	if (!resultWarnings) return;
+	resultWarnings.innerHTML = "";
+	list.forEach((text) => {
+		const item = document.createElement("li");
+		item.textContent = text;
+		resultWarnings.appendChild(item);
+	});
+	resultWarnings.hidden = list.length === 0;
+}
+
+// Bloco "Confiabilidade da foto": nitidez, padrão, luz e tempo
+function fillChecks(freshness) {
+	if (!explainChecks) return;
+	const fmt = (n) => Math.round(n).toLocaleString("pt-BR");
+	const dec = (n) => n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+	const brilho = freshness.avg.brightness;
+	const luzOk = brilho >= LIGHT_MIN && brilho <= LIGHT_MAX;
+	const checks = [
+		{
+			ok: freshness.sharpness >= LIMITE_NITIDEZ,
+			titulo: "Nitidez",
+			texto: freshness.sharpness >= LIMITE_NITIDEZ
+				? `Foto nítida (${fmt(freshness.sharpness)}, mínimo ${LIMITE_NITIDEZ}).`
+				: `Foto tremida ou fora de foco (${fmt(freshness.sharpness)}, mínimo ${LIMITE_NITIDEZ}).`,
+		},
+		{
+			ok: freshness.outlier <= freshness.outlierLimit,
+			titulo: "Parecida com o treino",
+			texto: freshness.outlier <= freshness.outlierLimit
+				? `Dentro do que o sistema aprendeu (distância ${dec(freshness.outlier)}, limite ${dec(freshness.outlierLimit)}).`
+				: `Fora do padrão (distância ${dec(freshness.outlier)}, limite ${dec(freshness.outlierLimit)}).`,
+		},
+		{
+			ok: luzOk,
+			titulo: "Iluminação",
+			texto: luzOk ? `Luz adequada (${Math.round(brilho * 100)}%).` : `Luz ${brilho < LIGHT_MIN ? "fraca" : "forte demais"} (${Math.round(brilho * 100)}%).`,
+		},
+	];
+	explainChecks.innerHTML = "";
+	checks.forEach(({ ok, titulo, texto }) => {
+		const item = document.createElement("li");
+		item.className = ok ? "check-ok" : "check-alerta";
+		item.innerHTML = `<span class="check-icon" aria-hidden="true">${ok ? "✓" : "!"}</span><span><strong>${titulo}</strong> ${texto}</span>`;
+		explainChecks.appendChild(item);
+	});
+
+	if (freshness.timing) {
+		const { deteccao, analise } = freshness.timing;
+		const item = document.createElement("li");
+		item.className = "check-tempo";
+		item.innerHTML = `<span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 9.5V13l2.5 1.5M10 3h4"/></svg></span><span><strong>Tempo</strong> ${fmt(deteccao + analise)} ms (achar a fruta ${fmt(deteccao)} ms + analisar ${fmt(analise)} ms).</span>`;
+		explainChecks.appendChild(item);
+		if (myTiming) myTiming.textContent = `${fmt(deteccao + analise)} ms`;
+	}
+}
 
 // Quanto cada medida empurrou a decisão (é a conta da regressão logística, parte por parte)
 function contributions(freshness) {
@@ -442,6 +620,7 @@ function drawExplainImages(freshness) {
 function fillExplain(freshness) {
 	if (!explainPanel || !freshness.crop) return;
 	drawExplainImages(freshness);
+	fillChecks(freshness);
 
 	// Barra empilhada e legenda com a porcentagem de cada categoria
 	const total = Math.max(1, Object.values(freshness.counts).reduce((a, b) => a + b, 0));
@@ -516,6 +695,7 @@ function resetSidebarState(message = "Aguardando") {
 	setClassBars(null);
 	freshnessReason.textContent = "O motivo do resultado aparece aqui.";
 	if (explainPanel) explainPanel.hidden = true;
+	showWarnings([]);
 	detectedFruit.textContent = message;
 	freshnessStatus.textContent = "Aguardando";
 	freshnessStatus.className = "status-fresh";
@@ -857,7 +1037,10 @@ function showNotice(message) {
 async function analyzePhoto() {
 	await ensureDetector();
 
+	// Tempo de cada etapa (para comparar com os 380 ms do FreshNet)
+	const t0 = performance.now();
 	const predictions = await detectObjects(photoCanvas);
+	const t1 = performance.now();
 	let prediction = pickPrediction(predictions);
 	let manual = false;
 
@@ -880,12 +1063,15 @@ async function analyzePhoto() {
 
 	const fruitKey = prediction.class;
 	const { freshness, mask } = analyzeFruit(fruitKey, prediction.bbox);
+	const t2 = performance.now();
+	freshness.timing = { deteccao: t1 - t0, analise: t2 - t1 };
 	const detectionConfidence = manual ? null : Math.round(prediction.score * 100);
-	const warnings = [lightMessage(freshness.avg.brightness)];
+	const warnings = [sharpnessMessage(freshness.sharpness), outlierMessage(freshness), lightMessage(freshness.avg.brightness)];
 	if (manual) warnings.push("A fruta não foi localizada automaticamente: foi analisado o centro da foto.");
 	const warning = warnings.filter(Boolean).join(" ") || null;
 
 	renderFruitState(fruitKey, freshness, detectionConfidence);
+	showWarnings(warnings.filter(Boolean));
 
 	// Caixa verde e defeitos pintados de vermelho por cima da foto
 	const overlay = buildOverlay(prediction, mask);

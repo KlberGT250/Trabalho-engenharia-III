@@ -1363,3 +1363,203 @@ select {
 		padding: 1rem;
 	}
 }
+
+/* ---------------------------------------------------------------
+   Avisos, confiabilidade e "Sobre o modelo"
+   --------------------------------------------------------------- */
+.result-warnings {
+	grid-column: 1 / -1;
+	display: grid;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.result-warnings[hidden] {
+	display: none;
+}
+
+.result-warnings li {
+	padding: 0.7rem 0.85rem;
+	border-left: 4px solid var(--warning);
+	border-radius: 6px;
+	background: var(--warning-soft);
+	color: var(--text);
+	font-size: 0.9rem;
+	line-height: 1.45;
+}
+
+.explain-checks {
+	display: grid;
+	gap: 0.55rem;
+	margin: 0.4rem 0 0;
+	padding: 0;
+	list-style: none;
+	font-size: 0.9rem;
+	line-height: 1.45;
+}
+
+.explain-checks li {
+	display: grid;
+	grid-template-columns: 1.5rem minmax(0, 1fr);
+	align-items: start;
+	gap: 0.55rem;
+}
+
+.explain-checks strong {
+	font-weight: 600;
+}
+
+.check-icon {
+	display: grid;
+	place-items: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 50%;
+	font-size: 0.8rem;
+	font-weight: 700;
+}
+
+.check-icon svg {
+	width: 0.95rem;
+	height: 0.95rem;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+}
+
+.check-ok .check-icon { background: var(--success-soft); color: var(--success); }
+.check-alerta .check-icon { background: var(--warning-soft); color: var(--warning); }
+.check-tempo .check-icon { background: var(--neutral); color: var(--text-soft); }
+
+.about-model {
+	width: min(100%, 900px);
+	margin-top: 1rem;
+	border: 1px solid var(--border-light);
+	border-radius: 14px;
+	background: var(--card-bg);
+	text-align: left;
+}
+
+.about-model summary {
+	padding: 1rem 1.25rem;
+	font-family: var(--font-display);
+	font-size: 1.15rem;
+	font-weight: 600;
+	cursor: pointer;
+	list-style-position: inside;
+}
+
+.about-model[open] summary {
+	border-bottom: 1px solid var(--border-light);
+}
+
+.about-model > :not(summary) {
+	margin-left: 1.25rem;
+	margin-right: 1.25rem;
+}
+
+.about-model > :last-child {
+	margin-bottom: 1.25rem;
+}
+
+.about-model p,
+.about-list {
+	color: var(--text-soft);
+	font-size: 0.9rem;
+	line-height: 1.55;
+}
+
+.about-model h4 {
+	margin-top: 1.5rem;
+	margin-bottom: 0.5rem;
+	font-family: var(--font-display);
+	font-size: 1.05rem;
+	font-weight: 600;
+}
+
+.about-list {
+	padding-left: 1.1rem;
+}
+
+.about-list li + li {
+	margin-top: 0.4rem;
+}
+
+.about-list strong,
+.about-model p strong {
+	color: var(--text);
+}
+
+.table-wrap {
+	overflow-x: auto;
+	border: 1px solid var(--border-light);
+	border-radius: 8px;
+}
+
+.data-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.85rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.data-table th,
+.data-table td {
+	padding: 0.55rem 0.7rem;
+	border-bottom: 1px solid var(--border-light);
+	text-align: left;
+	vertical-align: top;
+}
+
+.data-table thead th {
+	background: var(--card-soft);
+	color: var(--text-soft);
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.data-table tbody th {
+	font-weight: 600;
+}
+
+.data-table tr:last-child th,
+.data-table tr:last-child td {
+	border-bottom: 0;
+}
+
+.data-table .row-total th,
+.data-table .row-total td {
+	font-weight: 700;
+	background: var(--accent-soft);
+}
+
+.confusion td {
+	text-align: center;
+	font-weight: 600;
+}
+
+.confusion .cell-ok { background: var(--success-soft); color: var(--success); }
+.confusion .cell-erro { background: var(--danger-soft); color: var(--danger); }
+
+.table-note {
+	margin-top: 0.5rem;
+	font-size: 0.82rem !important;
+}
+
+@media (max-width: 480px) {
+	.about-model summary { padding: 0.9rem 1rem; }
+	.about-model > :not(summary) { margin-left: 1rem; margin-right: 1rem; }
+	.data-table th, .data-table td { padding: 0.5rem 0.55rem; }
+}
+
+/* No celular as tabelas rolam para o lado em vez de espremer o texto */
+.data-table {
+	min-width: 480px;
+}
+
+.data-table tbody th {
+	min-width: 7.5rem;
+}

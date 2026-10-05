@@ -37,6 +37,34 @@ Rodando o código JavaScript do site no navegador, nas mesmas 498 fotos: **95,4%
 A fórmula antiga errava principalmente as frutas estragadas: laranja com mofo (cinza, branco ou verde) e maçã
 com podridão marrom-clara eram classificadas como frescas, porque ela só procurava manchas marrons escuras.
 
+## Métricas completas e avisos de confiabilidade
+
+`avaliar_metricas.py` usa o modelo já treinado e calcula, nas fotos de validação (570 fotos numa nova
+amostra baixada em outubro/2026):
+
+| Fruta   | Fotos | Acurácia | Precisão | Recall | F1    |
+|---------|-------|----------|----------|--------|-------|
+| Banana  | 199   | 99,0%    | 99,1%    | 98,9%  | 99,0% |
+| Maçã    | 174   | 93,1%    | 93,1%    | 92,8%  | 93,0% |
+| Laranja | 197   | 91,9%    | 92,6%    | 91,8%  | 91,8% |
+| Geral   | 570   | 94,7%    | 95,0%    | 94,5%  | 94,7% |
+
+Precisão, recall e F1 são a média das duas classes (fresca e estragada), como no artigo FreshNet.
+O resultado completo, com a matriz de confusão, fica em `metricas.json`.
+
+O mesmo script calibra os dois avisos do site:
+
+- **Foto tremida:** variância do Laplaciano numa versão 256x256 da fruta. Limite 12. Marca 2,6% das
+  fotos nítidas e 56,9% das fotos com leve desfoque (blur gaussiano de raio 2).
+- **Foto fora do padrão:** distância de Mahalanobis entre as 8 medidas e as fotos de calibração
+  (versão simples da detecção de anomalia do FreshNet, que usa autoencoder). O limite deixa passar
+  97,5% das fotos de calibração. Marca 3,9% das fotos normais de validação e 22% a 54% das fotos em
+  que a fruta escolhida está errada. Os números ficam em `anomalia.json` e na constante `ANOMALIA`
+  do `Js/escript.js`.
+
+Rodando o JavaScript do site no navegador em 90 dessas fotos, o resultado bate com o Python
+(82 contra 83 acertos) e a nitidez medida tem correlação de 0,99 com a do Python.
+
 ## Limitações
 
 - O dataset só tem duas classes (fresca e estragada). O estado **Moderado** é a faixa intermediária
@@ -50,6 +78,7 @@ com podridão marrom-clara eram classificadas como frescas, porque ela só procu
 pip install numpy pillow scikit-learn
 python avaliar_formula_antiga.py   # acerto da fórmula antiga
 python treinar.py                  # treina, mostra o acerto e gera modelo.json
+python avaliar_metricas.py         # precisão, recall, F1, matriz de confusão e calibração dos avisos
 ```
 
 Depois de treinar, copie os números de `modelo.json` para a constante `MODELO` em `Js/escript.js`.

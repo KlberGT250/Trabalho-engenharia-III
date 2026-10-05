@@ -98,6 +98,7 @@
                     <button id="voice-toggle" class="voice-toggle" type="button" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg><span class="voice-label">Falar resultado: desligado</span></button>
 
                     <section class="detection-result" aria-live="polite" aria-label="Resultado da detecção">
+                        <ul id="result-warnings" class="result-warnings" hidden></ul>
                         <div>
                             <span class="result-label">Fruta detectada</span>
                             <strong id="detected-fruit">Aguardando</strong>
@@ -154,6 +155,11 @@
                         </div>
 
                         <div class="explain-block">
+                            <span class="result-label">Confiabilidade da foto</span>
+                            <ul id="explain-checks" class="explain-checks"></ul>
+                        </div>
+
+                        <div class="explain-block">
                             <span class="result-label">Do que a casca é feita</span>
                             <div id="explain-stack" class="explain-stack" role="img" aria-label="Composição da casca"></div>
                             <ul id="explain-legend" class="explain-legend"></ul>
@@ -180,6 +186,66 @@
                             <p class="explain-note">Cada medida é comparada com a média das fotos usadas no treino. Quanto maior a barra, mais aquela medida pesou.</p>
                         </div>
                     </section>
+
+                    <details class="about-model" id="sobre-modelo">
+                        <summary>Sobre o modelo: como foi testado</summary>
+
+                        <p>O classificador foi testado em <strong>570 fotos</strong> do dataset <em>Fruits fresh and rotten for classification</em> (Kaggle) que <strong>não foram usadas no treino</strong>. As cópias giradas ou espelhadas de uma mesma fruta ficam sempre do mesmo lado, para o teste não "colar" de uma foto já vista.</p>
+
+                        <h4>Desempenho por fruta</h4>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead><tr><th scope="col">Fruta</th><th scope="col">Fotos</th><th scope="col">Acurácia</th><th scope="col">Precisão</th><th scope="col">Recall</th><th scope="col">F1</th></tr></thead>
+                                <tbody>
+                                    <tr><th scope="row">Banana</th><td>199</td><td>99,0%</td><td>99,1%</td><td>98,9%</td><td>99,0%</td></tr>
+                                    <tr><th scope="row">Maçã</th><td>174</td><td>93,1%</td><td>93,1%</td><td>92,8%</td><td>93,0%</td></tr>
+                                    <tr><th scope="row">Laranja</th><td>197</td><td>91,9%</td><td>92,6%</td><td>91,8%</td><td>91,8%</td></tr>
+                                    <tr class="row-total"><th scope="row">Geral</th><td>570</td><td>94,7%</td><td>95,0%</td><td>94,5%</td><td>94,7%</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-note">Precisão, recall e F1 são a média das duas classes (fresca e estragada), como no artigo FreshNet.</p>
+
+                        <h4>Matriz de confusão (todas as frutas)</h4>
+                        <div class="table-wrap">
+                            <table class="data-table confusion">
+                                <thead><tr><th scope="col">Real ↓ / Sistema →</th><th scope="col">Fresco</th><th scope="col">Moderado</th><th scope="col">Passado</th></tr></thead>
+                                <tbody>
+                                    <tr><th scope="row">Fresca</th><td class="cell-ok">299</td><td>7</td><td class="cell-erro">3</td></tr>
+                                    <tr><th scope="row">Estragada</th><td class="cell-erro">18</td><td>16</td><td class="cell-ok">227</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-note">O dataset só tem fotos marcadas como "fresca" ou "estragada", então o estado Moderado não tem resposta certa: ele mostra os casos em que o sistema ficou em dúvida. O erro mais sério é estragada classificada como fresca (18 de 261 fotos estragadas), a maioria laranjas (12 de 18).</p>
+
+                        <h4>Avisos de confiabilidade</h4>
+                        <ul class="about-list">
+                            <li><strong>Foto tremida:</strong> marca 56,9% das fotos com leve desfoque e só 2,6% das fotos nítidas.</li>
+                            <li><strong>Foto fora do padrão:</strong> marca 3,9% das fotos normais e pega a fruta errada (por exemplo, maçã analisada como banana) em 22,5% a 53,8% dos casos. É um aviso de "desconfie", não um detector perfeito.</li>
+                        </ul>
+
+                        <h4>Comparação com o FreshNet</h4>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead><tr><th scope="col"></th><th scope="col">FreshNet (artigo)</th><th scope="col">Fresh Food</th></tr></thead>
+                                <tbody>
+                                    <tr><th scope="row">Produtos</th><td>5 vegetais</td><td>3 frutas</td></tr>
+                                    <tr><th scope="row">Fotos de teste</th><td>3.500 (todas)</td><td>570 (fora do treino)</td></tr>
+                                    <tr><th scope="row">Modelo</th><td>MobileNetV3-Small (rede neural)</td><td>8 medidas de cor e textura + regressão logística</td></tr>
+                                    <tr><th scope="row">Precisa de GPU para treinar</th><td>Sim (Tesla T4)</td><td>Não (roda em poucos minutos num notebook comum)</td></tr>
+                                    <tr><th scope="row">Acurácia</th><td>92,7%</td><td>94,7%</td></tr>
+                                    <tr><th scope="row">Precisão</th><td>91,4%</td><td>95,0%</td></tr>
+                                    <tr><th scope="row">Recall</th><td>92,0%</td><td>94,5%</td></tr>
+                                    <tr><th scope="row">F1</th><td>91,6%</td><td>94,7%</td></tr>
+                                    <tr><th scope="row">Tempo por foto</th><td>380 ms (Raspberry Pi 4)</td><td id="my-timing">analise uma foto para medir</td></tr>
+                                    <tr><th scope="row">Detecção de anomalia</th><td>Autoencoder</td><td>Distância de Mahalanobis</td></tr>
+                                    <tr><th scope="row">Explicação do resultado</th><td>Grad-CAM</td><td>Mapa da casca e peso de cada medida</td></tr>
+                                    <tr><th scope="row">Onde roda</th><td>Raspberry Pi e Android (app)</td><td>Qualquer navegador, sem instalar</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-note">Os números não são diretamente comparáveis: os produtos, as fotos e as classes são diferentes. A comparação mostra que um modelo simples e explicável chega a um desempenho na mesma faixa, sem precisar de rede neural treinada. As fotos de teste são de fundo claro e bem iluminadas; em fotos reais de celular o acerto pode ser menor.</p>
+                    </details>
                 </div>
             </section>
         </main>
