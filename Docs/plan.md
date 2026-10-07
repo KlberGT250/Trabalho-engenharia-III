@@ -147,7 +147,7 @@ Botão **"Analisar fruta"**, que abre a câmera, e link **"ou escolher uma foto 
 
 Na ordem em que aparece:
 
-1. **Resposta "Pode consumir?"**, em destaque e na cor do estado:
+1. **Resposta "Pode consumir?"**, em destaque e na cor do estado. Em cima dela aparece a fruta, o estado e a **chance de estar estragada** calculada pelo modelo (mostrada entre 1% e 99%):
    - Fresco: **"Pode consumir"**
    - Moderado: **"Consuma logo"**, com dica de uso (suco, vitamina, bolo)
    - Passado: **"Melhor não consumir"**
@@ -225,7 +225,7 @@ Uma coluna, nesta ordem:
 
 - `sw.js` (service worker) guarda o site, as bibliotecas (`Js/vendor/tf.min.js` e `Js/vendor/coco-ssd.min.js`), as imagens e o modelo COCO-SSD.
 - `manifest.webmanifest` permite instalar o app, com os ícones de `IMG/icones/`.
-- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v14`). Sem isso, quem já abriu o site continua vendo a versão antiga.
+- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v15`). Sem isso, quem já abriu o site continua vendo a versão antiga.
 
 ---
 
@@ -253,6 +253,7 @@ Uma coluna, nesta ordem:
 - **Maçã amarela** tende a sair como passada (a cor viva da maçã cobre só vermelho e verde).
 - **Laranja** que apodrece mantendo a cor laranja engana o modelo.
 - O modelo só vê a casca: não percebe cheiro, firmeza nem o interior da fruta.
+- **Fundo escuro** atrapalha: num teste trocando o fundo branco das fotos por um pano escuro, o acerto nas frutas frescas caiu de 100% para 72%, porque o fundo que entra na área oval conta como "partes muito escuras". Fundo cinza, madeira ou verde quase não afetaram. Pela mesma razão, na banana (comprida) parte do fundo claro pode contar como "acinzentado".
 
 ---
 
@@ -262,5 +263,21 @@ Uma coluna, nesta ordem:
 - [ ] Confirmar o funcionamento sem internet num celular (modo avião)
 - [ ] Decidir o modo escuro (automático, sempre claro ou botão)
 - [ ] Definir a função do botão + (adicionar outras frutas)
+- [ ] Fazer o sistema ignorar a cor do fundo nas bordas do recorte e treinar de novo
 - [ ] Incluir a faixa do amarelo para maçã e treinar de novo
 - [ ] Medir o tempo de análise em pelo menos três celulares
+
+---
+
+## 10. Revisão de outubro de 2026 (v15)
+
+Correções feitas depois da revisão geral do projeto:
+
+| Problema | Correção |
+|---|---|
+| A câmera podia ficar ligada escondida se a pessoa voltasse antes de ela terminar de abrir | A câmera agora é desligada na hora nesse caso |
+| No computador, uma foto sem fruta apagava só metade do resultado anterior | O resultado anterior fica inteiro na tela e aparece só o aviso |
+| "Fresco (100%)" parecia certeza total, mas era a altura da barra | Agora mostra a chance real de estar estragada, entre 1% e 99% |
+| Ao abrir a câmera pelo teclado, o foco ficava fora dela | O foco vai para a câmera, o Tab fica dentro dela e, ao fechar, volta para o botão |
+| A linha do "Por quê?" sumia no modo escuro | Linha visível no modo escuro |
+| Código da barra lateral antiga e 65 regras de CSS sem uso | Removidos (CSS cerca de 12% menor) |

@@ -25,6 +25,8 @@ const verdictTip = document.querySelector("#verdict-tip");
 // "Por quê?": motivos simples, a partir das medidas que mais pesaram
 // ---------------------------------------------------------------
 const pctTexto = (x) => `${Math.round(x * 100)}%`;
+// Chance mostrada para a pessoa: entre 1% e 99% (o modelo nunca tem certeza absoluta)
+const chanceMostrada = (x) => Math.min(99, Math.max(1, Math.round(x * 100)));
 
 // Frase de cada medida. "bom" = puxou para fresco, "ruim" = empurrou para passado.
 function fraseMotivo(k, lado, f, z) {
@@ -110,8 +112,6 @@ const freshnessReason = document.querySelector("#freshness-reason");
 const confidenceValue = document.querySelector("#confidence-value");
 const confidenceBar = document.querySelector("#confidence-bar");
 const confidenceTrack = document.querySelector(".confidence-track");
-const leftSidebar = document.querySelector(".sidebar-left");
-const mobileOverlay = document.querySelector(".mobile-shell-overlay");
 
 const fruitNames = {
 	apple: "Maçã",
@@ -119,12 +119,6 @@ const fruitNames = {
 	orange: "Laranja",
 };
 
-
-const fruitImages = {
-	banana: "./IMG/banana.png",
-	apple: "./IMG/maca.png",
-	orange: "./IMG/laranja.png",
-};
 
 // Recomendação de uso para cada fruta e cada estado
 const statusStates = {
@@ -167,7 +161,7 @@ const statusStates = {
 // 3) Um classificador de regressão logística (um por fruta) transforma
 //    essas medidas na chance de a fruta estar estragada.
 // Treinado com o dataset "Fruits fresh and rotten for classification"
-// (Kaggle). Separando por foto original, acertou 96% em 498 fotos
+// (Kaggle). Separando por foto original, acertou 94,7% em 570 fotos
 // que não foram usadas no treino (antes: 80% com a fórmula antiga).
 // O script de treino está em Docs/treino/.
 // ---------------------------------------------------------------
@@ -297,8 +291,6 @@ const NOMES_MEDIDAS = [
 // Cor usada para pintar os defeitos por cima da imagem (RGBA)
 const SPOT_COLOR = [255, 64, 64, 115];
 
-const statusBadge = document.querySelector("#status-badge");
-const recommendationText = document.querySelector("#freshness-recommendation");
 const explainPanel = document.querySelector("#explain-panel");
 const explainCrop = document.querySelector("#explain-crop");
 const explainMap = document.querySelector("#explain-map");
@@ -309,11 +301,6 @@ const explainFactors = document.querySelector("#explain-factors");
 const scaleMarker = document.querySelector("#scale-marker");
 const explainChecks = document.querySelector("#explain-checks");
 const resultWarnings = document.querySelector("#result-warnings");
-const fruitStateEmpty = document.querySelector("#rsEmpty");
-const fruitStateFilled = document.querySelector("#rsFruit");
-const detectedEmoji = document.querySelector("#detected-emoji-filled");
-const detectedFruitName = document.querySelector("#detected-fruit-name-filled");
-const confidenceBadge = document.querySelector("#confidence-badge-filled");
 const classBars = {
 	fresco: [document.querySelector("#bar-fresco"), document.querySelector("#pct-fresco")],
 	moderado: [document.querySelector("#bar-moderado"), document.querySelector("#pct-moderado")],
@@ -583,7 +570,7 @@ function buildReason(freshness) {
 	partes.push(`${pct(marrom + escuro)}% com manchas escuras`);
 	partes.push(`${pct(mofo)}% acinzentada ou esbranquiçada`);
 	const casca = textura > TEXTURA_IRREGULAR[freshness.fruitKey] ? "casca irregular" : "casca lisa";
-	return `${partes.join(", ")} e ${casca}. Chance de estar estragada: ${pct(freshness.chance)}%.`;
+	return `${partes.join(", ")} e ${casca}. Chance de estar estragada: ${chanceMostrada(freshness.chance)}%.`;
 }
 
 function sharpnessMessage(sharpness) {
@@ -604,9 +591,6 @@ function lightMessage(brightness) {
 	return null;
 }
 
-// ---------------------------------------------------------------
-// Painel lateral e painel de resultado
-// ---------------------------------------------------------------
 // ---------------------------------------------------------------
 // Painel "Por que deu esse resultado"
 // ---------------------------------------------------------------
@@ -729,7 +713,7 @@ function fillExplain(freshness) {
 	});
 
 	// Régua com a chance de estar estragada
-	const chance = Math.round(freshness.chance * 100);
+	const chance = chanceMostrada(freshness.chance);
 	scaleMarker.style.left = `${chance}%`;
 	scaleMarker.dataset.value = `${chance}%`;
 	scaleMarker.classList.toggle("near-start", chance < 8);
@@ -770,32 +754,15 @@ function setClassBars(avg) {
 	});
 }
 
-function resetSidebarState(message = "Aguardando") {
-	fruitStateFilled.hidden = true;
-	fruitStateEmpty.hidden = false;
-	statusBadge.textContent = "Aguardando";
-	statusBadge.className = "status-badge neutral";
-	recommendationText.textContent = "Tire uma foto de uma fruta";
-	confidenceBadge.textContent = "0%";
-	setConfidence(0);
-	setClassBars(null);
-	freshnessReason.textContent = "O motivo do resultado aparece aqui.";
-	if (explainPanel) explainPanel.hidden = true;
-	if (detectionResult) detectionResult.hidden = true;
-	showWarnings([]);
-	detectedFruit.textContent = message;
-	freshnessStatus.textContent = "Aguardando";
-	freshnessStatus.className = "status-fresh";
-}
-
 function renderFruitState(fruitKey, freshness, detectionConfidence) {
-	const { state, percent, avg } = freshness;
+	const { state, avg } = freshness;
 	const fruitName = fruitNames[fruitKey];
 
 	// Resposta direta no topo do resultado
 	if (verdict) {
 		verdict.className = `verdict ${state.className}`;
-		verdictFruit.textContent = `${fruitName} · ${state.label} (${percent}%)`;
+		// Mostra a chance real calculada pelo modelo (antes mostrava a altura da barra, que confundia)
+		verdictFruit.textContent = `${fruitName} · ${state.label} · ${chanceMostrada(freshness.chance)}% de chance de estar estragada`;
 		verdictTitle.textContent = VEREDITOS[state.className];
 		// Tira o começo da dica quando ele repete o título ("Consuma logo", "Evite consumir")
 		const dica = state.tips[fruitKey].replace(/^(Consuma logo|Evite consumir)[.,]\s*/, "");
@@ -803,16 +770,6 @@ function renderFruitState(fruitKey, freshness, detectionConfidence) {
 		fillVerdictWhy(freshness);
 	}
 	if (detectionResult) detectionResult.hidden = false;
-
-	fruitStateFilled.hidden = false;
-	fruitStateEmpty.hidden = true;
-	detectedEmoji.src = fruitImages[fruitKey];
-	detectedEmoji.alt = fruitName;
-	detectedFruitName.textContent = fruitName;
-	confidenceBadge.textContent = `${state.label} • ${percent}%`;
-	statusBadge.textContent = state.label;
-	statusBadge.className = `status-badge ${state.className}`;
-	recommendationText.textContent = state.tips[fruitKey];
 
 	detectedFruit.textContent = fruitName;
 	freshnessStatus.textContent = state.label;
@@ -919,7 +876,7 @@ function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning 
 	ctx.drawImage(photoCanvas, photoX, 0, photoW, photoH);
 	ctx.drawImage(overlay, photoX, 0, photoW, photoH);
 
-	const { state, percent, avg } = freshness;
+	const { state, avg } = freshness;
 	const stateColor = CARD_COLORS[state.className];
 	let y = photoH + 70;
 
@@ -943,7 +900,7 @@ function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning 
 	const nameWidth = ctx.measureText(fruitName).width;
 
 	ctx.font = font(32, 700);
-	const pillText = `${state.label.toUpperCase()} • ${percent}%`;
+	const pillText = state.label.toUpperCase();
 	const pillW = ctx.measureText(pillText).width + 48;
 	const pillX = PAD + nameWidth + 32;
 	ctx.fillStyle = stateColor;
@@ -1140,7 +1097,7 @@ async function analyzePhoto() {
 			};
 			manual = true;
 		} else {
-			resetSidebarState("Nenhuma fruta na foto");
+			// Mantém o resultado anterior inteiro na tela e só avisa
 			showNotice(`Não encontrei ${fruitWanted()} na foto. Tente mais perto, com a fruta inteira e um fundo liso.`);
 			return;
 		}
@@ -1259,8 +1216,13 @@ async function detectLive() {
 	}
 }
 
+// Cada vez que a câmera é fechada, o número muda. Se a câmera terminar de abrir
+// depois de a pessoa ter voltado, ela é desligada na hora (antes ficava ligada escondida).
+let cameraSession = 0;
+
 async function startCapture() {
 	if (cameraStarted) return;
+	const sessao = cameraSession;
 
 	if (!navigator.mediaDevices?.getUserMedia) {
 		const error = new Error("Câmera não suportada neste navegador.");
@@ -1272,6 +1234,13 @@ async function startCapture() {
 		video: { facingMode: { ideal: "environment" } },
 		audio: false,
 	});
+
+	if (sessao !== cameraSession || cameraCard.hidden) {
+		stream.getTracks().forEach((track) => track.stop());
+		const error = new Error("A câmera foi fechada antes de abrir");
+		error.name = "CameraClosed";
+		throw error;
+	}
 
 	cameraFeed.srcObject = stream;
 	await cameraFeed.play();
@@ -1340,6 +1309,7 @@ async function startCamera() {
 		await startCapture();
 		if (!detector) cameraMessage.textContent = "Preparando a detecção (só demora na primeira vez)...";
 		await ensureDetector();
+		if (cameraCard.hidden) return; // a pessoa voltou enquanto o modelo carregava
 
 		if (!detectionLoopStarted) {
 			window.setInterval(detectLive, 500);
@@ -1351,6 +1321,7 @@ async function startCamera() {
 		cameraFrame?.classList.remove("is-error");
 		setLiveHint(`Aponte a câmera para uma ${fruitWanted()}`);
 	} catch (error) {
+		if (error.name === "CameraClosed") return;
 		console.error(error);
 		cameraFrame?.classList.add("is-error");
 		cameraLock.classList.remove("is-hidden");
@@ -1408,22 +1379,49 @@ function hideResults() {
 	if (explainPanel) explainPanel.hidden = true;
 }
 
+let focoAntesDaCamera = null;
+
 function openCameraView() {
+	if (cameraCard.hidden) focoAntesDaCamera = document.activeElement;
 	setHomeVisible(false);
 	hideResults();
 	cameraCard.hidden = false;
 	document.body.classList.add("camera-open");
 	if (cameraHelp) cameraHelp.hidden = true;
+	cameraBack?.focus();
 }
 
 // Fecha a câmera e desliga a imagem (economiza bateria)
 function closeCameraView() {
+	const estavaAberta = !cameraCard.hidden;
 	cameraCard.hidden = true;
 	document.body.classList.remove("camera-open");
 	stopCapture();
+	// Devolve o foco para onde a pessoa estava (ou para o botão principal)
+	if (estavaAberta) {
+		const alvo = focoAntesDaCamera && focoAntesDaCamera.offsetParent ? focoAntesDaCamera : analyzeButton;
+		alvo?.focus({ preventScroll: true });
+	}
 }
 
+// Com a câmera aberta, o Tab fica circulando só pelos botões dela
+cameraCard.addEventListener("keydown", (event) => {
+	if (event.key !== "Tab") return;
+	const focaveis = [...cameraCard.querySelectorAll("button:not([disabled])")].filter((b) => b.offsetParent);
+	if (!focaveis.length) return;
+	const primeiro = focaveis[0];
+	const ultimo = focaveis[focaveis.length - 1];
+	if (event.shiftKey && document.activeElement === primeiro) {
+		event.preventDefault();
+		ultimo.focus();
+	} else if (!event.shiftKey && document.activeElement === ultimo) {
+		event.preventDefault();
+		primeiro.focus();
+	}
+});
+
 function stopCapture() {
+	cameraSession++;
 	const stream = cameraFeed.srcObject;
 	if (stream) stream.getTracks().forEach((track) => track.stop());
 	cameraFeed.srcObject = null;
@@ -1472,26 +1470,8 @@ updateAnalyzeLabel();
 // "ou escolher uma foto da galeria"
 stepsGallery?.addEventListener("click", () => galleryInput.click());
 
-function closeMobileSidebars() {
-	leftSidebar?.classList.remove("mobile-open");
-	mobileOverlay?.classList.remove("is-visible");
-}
-
-// Atenção: ainda falta um botão no HTML que chame esta função
-function toggleSidebar(sidebar) {
-	const isOpen = sidebar.classList.contains("mobile-open");
-	closeMobileSidebars();
-	if (!isOpen) {
-		sidebar.classList.add("mobile-open");
-		mobileOverlay?.classList.add("is-visible");
-	}
-}
-
-mobileOverlay?.addEventListener("click", closeMobileSidebars);
-
 document.addEventListener("keydown", (event) => {
 	if (event.key === "Escape") {
-		closeMobileSidebars();
 		if (!cameraCard.hidden) cameraBack?.click();
 	}
 });

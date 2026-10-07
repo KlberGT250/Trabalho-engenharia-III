@@ -17,39 +17,7 @@
     <title>Fresh Food</title>
 </head>
 <body>
-    <div class="mobile-shell-overlay" aria-hidden="true"></div>
-
     <div class="app-shell">
-        <aside class="sidebar sidebar-left" aria-label="Sidebar da esquerda">
-            <div class="sidebar-left-body">
-                <div class="project-brand">
-                    <img src="./IMG/logo.png" alt="Logo Fresh Food" class="project-logo">
-                    <h2>Fresh Food</h2>
-                    <p>Banana, maçã e laranja: fresca ou passada?</p>
-                </div>
-
-                <div class="detected-header">
-                    <div id="rsEmpty" class="state-panel state-empty">
-                        <h3>Fruta detectada</h3>
-                        <img id="detected-emoji-empty" class="detected-emoji neutral" src="./IMG/sem-fruta.png" alt="Nenhuma fruta detectada">
-                        <div class="detected-fruit-name">Nenhuma fruta</div>
-                    </div>
-
-                    <div id="rsFruit" class="state-panel state-filled" hidden>
-                        <h3>Fruta detectada</h3>
-                        <img id="detected-emoji-filled" class="detected-emoji" src="./IMG/maca.png" alt="Fruta detectada">
-                        <div id="detected-fruit-name-filled" class="detected-fruit-name">Nenhuma fruta</div>
-                        <div id="confidence-badge-filled" class="confidence-badge">0%</div>
-                    </div>
-                </div>
-
-                <div class="status-block">
-                    <span id="status-badge" class="status-badge neutral">Aguardando</span>
-                    <p id="freshness-recommendation">Aponte a câmera para uma fruta</p>
-                </div>
-            </div>
-        </aside>
-
         <main id="main" class="main-content">
             <section class="hero-panel" id="sobre">
                 <div class="detection-section" id="testar" aria-label="Fotografe uma fruta">
@@ -190,7 +158,7 @@
                             </div>
 
                             <div class="class-bars">
-                                <span class="result-label">Chance de cada estado</span>
+                                <span class="result-label">Quão perto está de cada estado</span>
                                 <div class="class-row">
                                     <span class="class-name">Fresco</span>
                                     <div class="class-track"><span id="bar-fresco" class="bar-fresco"></span></div>

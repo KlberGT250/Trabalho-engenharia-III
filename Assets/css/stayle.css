@@ -99,68 +99,14 @@ select {
 	background: var(--background);
 }
 
-.sidebar {
-	background: var(--sidebar);
-	padding: 1.5rem 1rem 1rem;
-	color: var(--text);
-}
-
 @media (max-width: 1300px) {
 	.app-shell {
 		grid-template-columns: 300px minmax(0, 1fr);
 	}
 
-	.sidebar {
-		padding: 1.25rem 0.85rem 1rem;
-	}
-
-	.project-brand {
-		padding-top: 1rem;
-	}
-
 	.detection-section h2 {
 		font-size: clamp(1.8rem, 3.1vw, 2.4rem);
 	}
-}
-
-.sidebar-left {
-	position: sticky;
-	top: 0;
-	min-height: 100vh;
-	height: auto;
-	border-right: 1px solid var(--border-light);
-}
-
-.project-brand {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	padding-top: 1.5rem;
-	text-align: center;
-}
-
-.project-logo {
-	width: 56px;
-	height: 56px;
-	object-fit: cover;
-	border-radius: 14px;
-	margin-bottom: 0.75rem;
-}
-
-.project-brand h2 {
-	margin: 0;
-	color: var(--text);
-	font-size: 1.7rem;
-	font-weight: 700;
-	line-height: 1.2;
-}
-
-.project-brand p {
-	margin: 0.4rem 0 0;
-	color: var(--text-soft);
-	font-size: 0.74rem;
-	line-height: 1.5;
 }
 
 .main-content {
@@ -174,10 +120,6 @@ select {
 	background: var(--background);
 }
 
-.mobile-sidebar-actions {
-	display: none;
-}
-
 .hero-panel {
 	display: flex;
 	flex-direction: column;
@@ -187,10 +129,6 @@ select {
 	margin: 0 auto;
 	padding: 0;
 	text-align: center;
-}
-
-.badge-highlight {
-	margin-top: 0;
 }
 
 .detection-section {
@@ -208,13 +146,6 @@ select {
 	margin: 1.25rem 0 1.5rem;
 	font-size: clamp(2rem, 4vw, 3rem);
 	line-height: 1.1;
-}
-
-.section-badge {
-	display: inline-flex;
-	margin: 0;
-	color: var(--text-soft);
-	font-size: 0.95rem;
 }
 
 .camera-card {
@@ -274,15 +205,6 @@ select {
 	color: #efe9dc;
 	font-size: 0.98rem;
 	text-align: center;
-}
-
-.fruit-selector {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: center;
-	gap: 0.9rem;
-	margin: 1.5rem 0 1.25rem;
-	width: min(100%, 760px);
 }
 
 .fruit-option {
@@ -383,119 +305,6 @@ select {
 	transition: width 0.3s ease;
 }
 
-.sidebar-left {
-	display: flex;
-	flex-direction: column;
-	padding: 2rem 1rem 1rem;
-}
-
-.sidebar-left-body {
-	display: flex;
-	flex-direction: column;
-	gap: 1.25rem;
-	height: auto;
-	min-height: 100%;
-}
-
-.detected-header {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	text-align: center;
-	padding-top: 0.5rem;
-}
-
-.state-panel {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	text-align: center;
-	width: 100%;
-}
-
-.state-panel[hidden] {
-	display: none;
-}
-
-.detected-header h3 {
-	margin: 0 0 0.75rem;
-	color: var(--text-soft);
-	font-size: 0.85rem;
-	font-weight: 500;
-}
-
-.detected-emoji {
-	display: block;
-	width: 72px;
-	height: 72px;
-	margin-bottom: 0.75rem;
-	object-fit: contain;
-	
-}
-
-.detected-emoji.neutral {
-	opacity: 0.8;
-	filter: grayscale(0.15) brightness(0.9);
-}
-
-.detected-fruit-name {
-	font-size: 1.5rem;
-	font-weight: 700;
-	color: var(--text);
-}
-
-.confidence-badge {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	margin-top: 0.75rem;
-	margin-bottom: 0.75rem;
-	padding: 0.35rem 0.7rem;
-	border-radius: 999px;
-	background: var(--accent-soft);
-	color: var(--accent);
-	font-weight: 600;
-}
-
-.status-block {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 0.6rem;
-	padding: 1rem 0;
-	text-align: center;
-}
-
-.status-badge {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0.45rem 0.7rem;
-	border-radius: 999px;
-	font-size: 0.8rem;
-	font-weight: 600;
-}
-
-.status-badge.neutral {
-	background: var(--neutral);
-	color: var(--text-soft);
-}
-
-.status-badge.fresco {
-	background: var(--success-soft);
-	color: var(--success);
-}
-
-.status-badge.moderado {
-	background: var(--warning-soft);
-	color: var(--warning);
-}
-
-.status-badge.passado {
-	background: var(--danger-soft);
-	color: var(--danger);
-}
-
 .status-fresh.fresco {
 	color: var(--success);
 }
@@ -508,72 +317,11 @@ select {
 	color: var(--danger);
 }
 
-#freshness-recommendation {
-	margin: 0;
-	color: var(--text-soft);
-	line-height: 1.6;
-}
-
-
-
-
-
-
-
-
-
-
 @media (max-width: 1100px) {
 	.app-shell {
 		display: block;
 		padding: 0;
 		min-width: 0;
-	}
-
-	.sidebar {
-		position: fixed;
-		top: 0;
-		bottom: 0;
-		z-index: 40;
-		display: none;
-		flex-direction: column;
-		width: min(84vw, 320px);
-		min-width: 0;
-		padding: 1.25rem 0.9rem 1rem;
-		background: var(--sidebar);
-		border: none;
-		box-shadow: 0 0 0 1px var(--border-light);
-		transition: transform 0.25s ease;
-		
-	}
-
-	.sidebar-left {
-		left: 0;
-		opacity: 0;
-		visibility: hidden;
-		transform: translateX(-110%);
-		border-right: 1px solid var(--border-light);
-	}
-
-	.sidebar.mobile-open {
-		opacity: 1;
-		visibility: visible;
-		transform: translateX(0);
-	}
-
-	.mobile-shell-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(20, 26, 19, 0.45);
-		opacity: 0;
-		visibility: hidden;
-		transition: opacity 0.2s ease, visibility 0.2s ease;
-		z-index: 30;
-	}
-
-	.mobile-shell-overlay.is-visible {
-		opacity: 1;
-		visibility: visible;
 	}
 
 	.main-content,
@@ -606,32 +354,6 @@ select {
 	.camera-card {
 		margin: 0 auto;
 	}
-
-
-	.mobile-sidebar-actions {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		gap: 0.75rem;
-		width: 100%;
-		margin-bottom: 1rem;
-	}
-
-	.mobile-sidebar-toggle {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		height: 42px;
-		padding: 0 0.9rem;
-		border: 1px solid var(--border-light);
-		border-radius: 12px;
-		background: var(--card-bg);
-		color: var(--text);
-		font-size: 0.9rem;
-		font-weight: 600;
-		cursor: pointer;
-		
-	}
 }
 
 @media (max-width: 480px) {
@@ -646,14 +368,6 @@ select {
 
 	.camera-frame {
 		aspect-ratio: 4 / 3;
-	}
-
-	.fruit-selector {
-		display: flex;
-		flex-direction: column;
-		gap: 0.6rem;
-		margin-top: 1.1rem;
-		width: 100%;
 	}
 
 	.fruit-option {
@@ -680,34 +394,10 @@ select {
 		grid-column: auto;
 	}
 
-	.sidebar-left-body {
-		gap: 0.9rem;
-	}
-
-	.project-brand h2 {
-		font-size: 1.35rem;
-	}
-
-	.detected-emoji {
-		font-size: 2.4rem;
-	}
-
-	.detected-fruit-name {
-		font-size: 1.2rem;
-	}
-
 }
-
 /* ---------------------------------------------------------------
    Novas partes: modo automático, barras de estado, aviso de luz, voz
    --------------------------------------------------------------- */
-
-
-.auto-icon {
-	color: var(--accent);
-	font-size: 1rem;
-	line-height: 1;
-}
 
 .live-hint {
 	position: absolute;
@@ -734,7 +424,6 @@ select {
 	display: none;
 }
 
-.photo-actions,
 .result-actions {
 	display: flex;
 	flex-wrap: wrap;
@@ -804,9 +493,6 @@ select {
 	border-radius: 12px;
 }
 
-
-
-
 .class-bars {
 	grid-column: 1 / -1;
 	display: flex;
@@ -871,14 +557,9 @@ select {
 	.camera-card {
 		aspect-ratio: auto;
 	}
+/* Quatro botões em duas colunas para não ocupar a tela toda */
+	
 
-	/* Quatro botões em duas colunas para não ocupar a tela toda */
-	.fruit-selector {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-
-	.photo-actions,
 	.result-actions {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -897,8 +578,6 @@ select {
 
 /* Títulos com serifa, que lembram rótulo de mercado */
 .detection-section h2,
-.project-brand h2,
-.detected-fruit-name,
 .detection-result strong#freshness-status,
 .detection-result strong#detected-fruit {
 	font-family: var(--font-display);
@@ -939,43 +618,9 @@ select {
 .action-secondary {
 	background: var(--card-bg);
 }
-
-.auto-icon {
-	color: var(--accent);
-	width: 1.25em;
-	height: 1.25em;
-}
-
-
-
 /* Cabeçalho do celular (a barra lateral some em telas pequenas) */
-.topbar {
-	display: none;
-}
 
 @media (max-width: 1100px) {
-	.topbar {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		align-self: stretch;
-		padding-bottom: 0.9rem;
-		margin-bottom: 1.1rem;
-		border-bottom: 1px solid var(--border-light);
-	}
-
-	.topbar-logo {
-		width: 34px;
-		height: 34px;
-		border-radius: 9px;
-		object-fit: cover;
-	}
-
-	.topbar-name {
-		font-family: var(--font-display);
-		font-size: 1.25rem;
-		font-weight: 600;
-	}
 
 	.detection-section {
 		align-items: stretch;
@@ -1037,20 +682,7 @@ select {
 .detection-result {
 	background: var(--card-bg);
 }
-
 /* Barra lateral do computador */
-.sidebar-left {
-	border-right: 1px solid var(--border-light);
-}
-
-.project-brand p {
-	font-size: 0.85rem;
-}
-
-.detected-emoji.neutral {
-	opacity: 0.55;
-	filter: grayscale(1);
-}
 
 :focus-visible {
 	outline: 2px solid var(--accent);
@@ -1402,65 +1034,9 @@ select {
 .check-ok .check-icon { background: var(--success-soft); color: var(--success); }
 .check-alerta .check-icon { background: var(--warning-soft); color: var(--warning); }
 .check-tempo .check-icon { background: var(--neutral); color: var(--text-soft); }
-
 /* ---------------------------------------------------------------
    Modo sem internet
    --------------------------------------------------------------- */
-.app-status {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5rem;
-	margin-top: 0.6rem;
-}
-
-
-.offline-status {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.45rem;
-	font-size: 0.85rem;
-	color: var(--text-soft);
-}
-
-.offline-status[hidden],
-.install-button[hidden] {
-	display: none;
-}
-
-.offline-status::before {
-	content: "";
-	width: 0.55rem;
-	height: 0.55rem;
-	border-radius: 50%;
-	background: var(--text-soft);
-}
-
-.offline-status.is-ready::before { background: var(--success); }
-.offline-status.is-offline::before { background: var(--warning); }
-
-.install-button {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.4rem;
-	padding: 0.45rem 0.85rem;
-	border: 1px solid var(--accent);
-	border-radius: 999px;
-	background: transparent;
-	color: var(--accent);
-	font: inherit;
-	font-size: 0.85rem;
-	font-weight: 600;
-	cursor: pointer;
-}
-
-@media (max-width: 1100px) {
-	.app-status {
-		justify-content: flex-start;
-		margin: 0.4rem 0 0.6rem;
-	}
-}
 
 /* ---------------------------------------------------------------
    Cabeçalho no estilo de app: nome em cima, frutas em círculos
@@ -1670,9 +1246,6 @@ select {
 
 /* Celular: cabeçalho de ponta a ponta, sem borda arredondada */
 @media (max-width: 1100px) {
-	.topbar {
-		display: none;
-	}
 
 	.app-header {
 		--header-pad: 1rem;
@@ -2490,11 +2063,6 @@ body.camera-open {
 		display: block;
 	}
 
-	.sidebar,
-	.sidebar-left {
-		display: none !important;
-	}
-
 	.main-content {
 		padding: 0 2.5rem 3rem;
 	}
@@ -2909,3 +2477,10 @@ body.camera-open {
 .why-bom .why-icon { background: var(--success); }
 .why-ruim .why-icon { background: var(--danger); }
 .verdict.moderado .why-ruim .why-icon { background: var(--warning); }
+
+/* Modo escuro: linha do "Por quê?" visível */
+@media (prefers-color-scheme: dark) {
+	.verdict-why {
+		border-top-color: rgba(239, 233, 220, 0.16);
+	}
+}
