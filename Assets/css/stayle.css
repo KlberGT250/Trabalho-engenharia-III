@@ -2856,3 +2856,56 @@ body.camera-open {
 	.history-item img { width: 64px; height: 64px; }
 	.result-empty { min-height: 360px; }
 }
+
+/* "Por quê?" dentro da resposta */
+.verdict-why {
+	margin-top: 0.75rem;
+	padding-top: 0.7rem;
+	border-top: 1px solid rgba(31, 42, 30, 0.12);
+}
+
+.verdict-why[hidden] {
+	display: none;
+}
+
+.verdict-why-title {
+	display: block;
+	margin-bottom: 0.4rem;
+	color: var(--text);
+	font-size: 0.85rem;
+	font-weight: 600;
+}
+
+.verdict-why ul {
+	display: grid;
+	gap: 0.4rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.verdict-why li {
+	display: grid;
+	grid-template-columns: 1.3rem minmax(0, 1fr);
+	align-items: start;
+	gap: 0.5rem;
+	color: var(--text);
+	font-size: 0.92rem;
+	line-height: 1.4;
+}
+
+.why-icon {
+	display: grid;
+	place-items: center;
+	width: 1.3rem;
+	height: 1.3rem;
+	margin-top: 0.05rem;
+	border-radius: 50%;
+	color: #ffffff;
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.why-bom .why-icon { background: var(--success); }
+.why-ruim .why-icon { background: var(--danger); }
+.verdict.moderado .why-ruim .why-icon { background: var(--warning); }

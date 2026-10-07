@@ -151,6 +151,7 @@ Na ordem em que aparece:
    - Fresco: **"Pode consumir"**
    - Moderado: **"Consuma logo"**, com dica de uso (suco, vitamina, bolo)
    - Passado: **"Melhor não consumir"**
+   - Logo abaixo, o **"Por quê?"**: 2 ou 3 motivos curtos, montados com as medidas que mais pesaram naquela foto (ex.: "Manchas marrons em 27% da casca", "A casca está lisa"). Motivos bons aparecem com ✓ verde e motivos de atenção com ! amarelo ou vermelho.
 2. Aviso: o resultado é uma estimativa pela aparência da casca; conferir cheiro e firmeza antes de comer.
 3. **Cartão com a foto** analisada, com botões **Baixar**, **Compartilhar** (quando o aparelho permite) e **Nova foto**.
 4. **Detalhes**: fruta, estado, chance de cada estado e certeza da detecção.
@@ -224,7 +225,7 @@ Uma coluna, nesta ordem:
 
 - `sw.js` (service worker) guarda o site, as bibliotecas (`Js/vendor/tf.min.js` e `Js/vendor/coco-ssd.min.js`), as imagens e o modelo COCO-SSD.
 - `manifest.webmanifest` permite instalar o app, com os ícones de `IMG/icones/`.
-- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v13`). Sem isso, quem já abriu o site continua vendo a versão antiga.
+- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v14`). Sem isso, quem já abriu o site continua vendo a versão antiga.
 
 ---
 

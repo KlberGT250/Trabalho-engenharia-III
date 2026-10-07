@@ -21,6 +21,76 @@ const verdictFruit = document.querySelector("#verdict-fruit");
 const verdictTitle = document.querySelector("#verdict-title");
 const verdictTip = document.querySelector("#verdict-tip");
 
+// ---------------------------------------------------------------
+// "Por quê?": motivos simples, a partir das medidas que mais pesaram
+// ---------------------------------------------------------------
+const pctTexto = (x) => `${Math.round(x * 100)}%`;
+
+// Frase de cada medida. "bom" = puxou para fresco, "ruim" = empurrou para passado.
+function fraseMotivo(k, lado, f, z) {
+	const v = f[k];
+	switch (k) {
+		case 0: return lado === "bom"
+			? (v >= 0.6 ? `A casca está com a cor viva em quase toda a fruta (${pctTexto(v)})` : `Boa parte da casca está com a cor viva (${pctTexto(v)})`)
+			: `Pouca casca com a cor viva da fruta (${pctTexto(v)})`;
+		case 1: return lado === "bom"
+			? (v < 0.03 ? "Não apareceram manchas marrons" : `Poucas manchas marrons (${pctTexto(v)} da casca)`)
+			: `Manchas marrons em ${pctTexto(v)} da casca`;
+		case 2: return lado === "bom"
+			? (v < 0.03 ? "Nenhum sinal de mofo" : `Quase nada acinzentado ou esbranquiçado (${pctTexto(v)})`)
+			: `Partes acinzentadas ou esbranquiçadas (${pctTexto(v)}), que podem ser mofo`;
+		case 3: return lado === "bom"
+			? "Sem partes muito escuras na casca"
+			: `Partes muito escuras na casca (${pctTexto(v)})`;
+		case 4: return lado === "bom"
+			? "A cor da casca não está apagada"
+			: `A cor está mais apagada que o normal em ${pctTexto(v)} da casca`;
+		case 5: return lado === "bom"
+			? "A cor está intensa, como numa fruta fresca"
+			: "A cor perdeu intensidade";
+		case 6: return lado === "bom"
+			? "O brilho da casca está dentro do normal"
+			: (z < 0 ? "A casca está mais escura que o normal" : "A casca está mais clara e desbotada que o normal");
+		case 7: return lado === "bom"
+			? "A casca está lisa"
+			: "A casca está enrugada ou irregular";
+		default: return "";
+	}
+}
+
+function buildWhy(freshness) {
+	const m = MODELO[freshness.fruitKey];
+	const itens = freshness.features.map((f, k) => {
+		const z = (f - m.media[k]) / m.desvio[k];
+		return { k, z, valor: m.pesos[k] * z };
+	});
+	const bons = itens.filter((i) => i.valor < -0.15).sort((a, b) => a.valor - b.valor);
+	const ruins = itens.filter((i) => i.valor > 0.15).sort((a, b) => b.valor - a.valor);
+	const estado = freshness.state.className;
+
+	let escolhidos;
+	if (estado === "fresco") escolhidos = bons.slice(0, 3).map((i) => ({ ...i, lado: "bom" }));
+	else if (estado === "passado") escolhidos = ruins.slice(0, 3).map((i) => ({ ...i, lado: "ruim" }));
+	else escolhidos = [...ruins.slice(0, 2).map((i) => ({ ...i, lado: "ruim" })), ...bons.slice(0, 1).map((i) => ({ ...i, lado: "bom" }))];
+
+	return escolhidos.map((i) => ({ lado: i.lado, texto: fraseMotivo(i.k, i.lado, freshness.features, i.z) }));
+}
+
+function fillVerdictWhy(freshness) {
+	const lista = document.querySelector("#verdict-why-list");
+	if (!lista) return;
+	const motivos = buildWhy(freshness);
+	lista.innerHTML = "";
+	motivos.forEach(({ lado, texto }) => {
+		const item = document.createElement("li");
+		item.className = lado === "bom" ? "why-bom" : "why-ruim";
+		item.innerHTML = `<span class="why-icon" aria-hidden="true">${lado === "bom" ? "✓" : "!"}</span><span></span>`;
+		item.lastElementChild.textContent = texto;
+		lista.appendChild(item);
+	});
+	lista.parentElement.hidden = motivos.length === 0;
+}
+
 // Resposta do passo 3 ("Pode consumir?") para cada estado
 const VEREDITOS = {
 	fresco: "Pode consumir",
@@ -80,7 +150,7 @@ const statusStates = {
 		label: "Passado",
 		className: "passado",
 		tips: {
-			banana: "Evite consumir. Se não tiver mofo nem cheiro ruim, ainda pode ir para bolo.",
+			banana: "Evite consumir. Descarte se tiver mofo ou cheiro ruim.",
 			apple: "Evite consumir. Descarte se tiver partes moles ou mofo.",
 			orange: "Evite consumir. Descarte se tiver mofo ou cheiro azedo.",
 		},
@@ -730,6 +800,7 @@ function renderFruitState(fruitKey, freshness, detectionConfidence) {
 		// Tira o começo da dica quando ele repete o título ("Consuma logo", "Evite consumir")
 		const dica = state.tips[fruitKey].replace(/^(Consuma logo|Evite consumir)[.,]\s*/, "");
 		verdictTip.textContent = dica.charAt(0).toUpperCase() + dica.slice(1);
+		fillVerdictWhy(freshness);
 	}
 	if (detectionResult) detectionResult.hidden = false;
 
