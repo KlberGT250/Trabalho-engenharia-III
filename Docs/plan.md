@@ -1,63 +1,265 @@
-Documentação de implementação — Fresh Food (v1.1)
-Visão geral da atualização
-Esta versão corrige dois problemas estruturais do protótipo anterior — dimensionamento responsivo e paleta de cores — e transforma a sidebar direita de um mockup estático em um painel funcional, conectado ao fluxo de seleção de fruta e captura de câmera. O arquivo de referência é prototipo-fresh-food.html, autocontido (HTML + CSS + JS em um único documento).
+# Fresh Food: documentação de implementação (v2)
 
-Paleta de cores
-O tema passou de dark mode para um fundo claro, mantendo o verde como identidade visual da marca.
+Atualizado em outubro de 2026. Substitui a versão 1.1, que descrevia o protótipo antigo (tema escuro, barras laterais e resultados sorteados).
 
-Token	Antes (dark)	Agora (light)	Uso
---bg	#0a0e1a	#ffffff	Fundo geral da página
---panel-bg	#0d1117	#f6f8f6	Header, sidebars, painel de status
---card-bg	—	#ffffff	Cards de fruta, botões, badges
---border-soft	rgba(255,255,255,0.08)	rgba(15,23,20,0.10)	Divisórias e bordas sutis
---text	#ffffff	#12261b	Texto principal
---text-muted	#8b949e	#667a6e	Rótulos e texto secundário
---accent / --accent-bright	#4CAF80 / #3ddc84	#1f8f52 / #2fb46a	Cor de marca, estado "Fresco"
---warn	#f2c94c	#b8720a	Estado "Moderado"
---danger	#eb5757	#c23b3b	Estado "Passado"
-Os tons de accent, warn e danger foram escurecidos em relação ao dark mode porque, sobre fundo branco, as versões originais (pensadas para contraste contra #0a0e1a) perdiam legibilidade — os novos valores mantêm a mesma leitura semântica (verde = bom, âmbar = atenção, vermelho = alerta) com contraste adequado em fundo claro.
+Site no ar: https://trabalho-engenharia-iii.vercel.app
 
-Uma variante :root[data-theme="dark"] foi deixada pronta no CSS, redefinindo os mesmos tokens para uma versão escura — não ativada por padrão, mas disponível caso o projeto queira oferecer alternância de tema no futuro.
+---
 
-# Estrutura de breakpoints responsivos
+## 1. Visão geral
 
-O layout usa três faixas, cobrindo tanto a correção "normal" (desktop) quanto a mobile pedidas:
+O Fresh Food é uma página web que fotografa uma **banana**, uma **maçã** ou uma **laranja** e responde se a fruta está **fresca**, **moderada** ou **passada**, dizendo de forma direta se ela **pode ser consumida**.
 
-Desktop padrão (acima de 1300px) Grid fixo 280px minmax(0,1fr) 320px. O uso de minmax(0,1fr) no lugar de 1fr puro é o que impede a coluna central de ser espremida a zero quando as duas sidebars somam 600px de largura fixa — sem isso, o grid tentava garantir o conteúdo mínimo intrínseco de cada coluna e "roubava" espaço da câmera.
+Tudo roda no navegador do próprio aparelho:
 
-Desktop intermediário (1101px–1300px) Faixa nova, que não existia na versão anterior. As sidebars encolhem para 240px e 280px, e o padding interno de sidebars e área central é reduzido (de 24px/32px para 20px/28px). Sem essa faixa, telas de notebook menores (ex.: 1200px) ficavam com a câmera desconfortavelmente estreita antes de o layout mobile entrar em ação.
+- não existe servidor nem login;
+- as fotos não saem do celular;
+- depois da primeira visita, funciona **sem internet**;
+- pode ser **instalado** na tela inicial como um app.
 
-Mobile (1100px e abaixo) Breakpoint mantido em 1100px (não 900px) — decisão já validada na rodada anterior, porque abaixo de ~1100px as duas sidebars fixas ainda cabiam lado a lado numa faixa intermediária e "engoliam" o espaço da câmera antes do grid colapsar. Nessa faixa:
+### O que mudou em relação à v1.1
 
-.layout vira coluna única (1fr).
-As duas sidebars saem do fluxo normal (position: fixed), ocupando min(84vw, 320px) de largura, e ficam escondidas fora da tela via transform: translateX(...).
-Os botões "☰ Sobre" e "Fruta 📋" no header (#openLeft / #openRight) adicionam a classe .open, trazendo cada sidebar de volta com uma transição de 0.25s.
-Um .overlay escurece o conteúdo atrás do drawer aberto e fecha ambas as sidebars ao ser clicado.
-Câmera muda de aspect-ratio: 16/9 para 4/3 (melhor aproveitamento vertical em telas estreitas), botões de fruta reduzem padding/fonte, e o painel de status empilha em 1 coluna.
+| v1.1 (protótipo) | v2 (atual) |
+|---|---|
+| Tema escuro com verde neon | Tema claro "banca de feira": creme, verde-folha e amarelo-banana |
+| Duas barras laterais | Sem barras laterais; cabeçalho com as frutas em círculos |
+| Câmera fixa no meio da tela | Cartão de 3 passos; a câmera abre em tela cheia |
+| Frescor e certeza sorteados | Análise real: 8 medidas da casca e regressão logística |
+| Tabela nutricional fixa | Resposta "Pode consumir?" e painel "Por que deu esse resultado" |
+| Sem histórico | Histórico das últimas 12 análises, guardado no celular |
+| Dependia da internet | Funciona sem internet (service worker) |
+| Só celular | Versão própria para computador |
 
-# Sidebar direita — de mockup a painel funcional
+---
 
-As três seções da sidebar direita agora têm estado vazio e estado preenchido, controlados por JavaScript e disparados pelo mesmo evento de clique que ativa a câmera.
+## 2. Como o sistema decide
 
-Fluxo de disparo Tanto os três botões abaixo da câmera (.fruit-btn) quanto os três cards na sidebar esquerda (.fruit-card) chamam a função startCamera(fruitName). Isso unifica os dois pontos de entrada — selecionar a fruta pela esquerda ou pelo centro produz o mesmo resultado à direita.
+```
+Foto ─► Achar a fruta ─► Recorte ─► 8 medidas ─► Classificador ─► Resultado
+        (COCO-SSD)       160×160     da casca     (regressão       e resposta
+                         área oval                logística)       "pode consumir?"
+```
 
-Fruta detectada (topo) Ao clicar, a seção volta primeiro ao estado vazio (#rsEmpty visível, #rsFruit oculto) enquanto a câmera inicializa. Depois de obtida a permissão de câmera e simulada a detecção (ver seção COCO-SSD abaixo), #rsEmpty é escondido e #rsFruit exibido, preenchendo emoji, nome da fruta e badge de confiança (Math.floor(78 + Math.random() * 20), ou seja, entre 78% e 97%).
+### 2.1 Achar a fruta (detecção de objetos)
 
-Status de frescor (meio) A função pickFreshness() sorteia um estado entre Fresco, Moderado e Passado usando um pool ponderado (pesos 5/3/1 — o triplo de chance de "Fresco" em relação a "Passado"), simulando uma distribuição realista de frutas testadas. O badge recebe a classe correspondente (.fresco, .moderado, .passado), que já existe no CSS com as cores semânticas da tabela acima, e o texto de recomendação é preenchido a partir do campo rec de cada estado.
+- Método: **SSD (Single Shot MultiBox Detector) com MobileNetV2**, versão leve SSDLite, pela biblioteca **COCO-SSD** do TensorFlow.js.
+- Modelo **pré-treinado** no conjunto de imagens COCO, que já reconhece banana, maçã e laranja. Por isso a equipe não precisou anotar imagens nem treinar um detector.
+- Aceita a detecção a partir de **25%** de certeza (`DETECT_MIN_SCORE`) e analisa até 20 objetos por foto, ficando com a fruta de maior certeza.
+- Se a pessoa escolheu a fruta e o detector não achou nada, o sistema analisa o centro da foto e avisa.
 
-Valores nutricionais (corpo) fillNutrition(fruitName) lê o objeto fruitData[fruitName].nutrition e gera dinamicamente os <li> da lista — nada é hardcoded 
+### 2.2 Classificar o frescor (parte desenvolvida pela equipe)
 
-# Ponto de integração do COCO-SSD
-O bloco setTimeout(() => {...}, 1200) dentro de startCamera é a simulação temporária — ele existe só para validar visualmente o comportamento das três seções sem depender do modelo treinado. Está marcado no código com um comentário explícito. Na implementação final, esse bloco deve ser substituído por:
+1. A região da fruta é reduzida para **160 × 160 pontos** e só uma **área oval** no centro entra na conta.
+2. Fundo branco, reflexos e pontos quase pretos são ignorados.
+3. São calculadas **8 medidas**: cor viva, manchas marrons, mofo (cinza ou branco), partes muito escuras, cor apagada, intensidade da cor, brilho e textura.
+4. Uma **regressão logística** (uma para cada fruta) transforma as medidas na **chance de estar estragada**.
+5. Estados: abaixo de 40% **Fresco**, de 40% a 70% **Moderado**, acima de 70% **Passado**.
 
-Carregamento do modelo COCO-SSD via TensorFlow.js (cocoSsd.load()).
-Um loop de inferência sobre os frames do elemento #cameraVideo (model.detect(cameraVideo)).
-Mapeamento das classes pré-treinadas relevantes (banana, apple, orange) para os nomes em português usados em fruitData.
-Uso do score retornado pela detecção no lugar do valor aleatório de confiança.
-Um classificador (ou heurística) adicional para o nível de frescor, já que o COCO-SSD por si só identifica a fruta mas não seu estado de maturação/frescor — esse é o ponto ainda em aberto no projeto.
-Tratamento de erro de câmera
-Mantido e simplificado: se navigator.mediaDevices.getUserMedia falhar (permissão negada, dispositivo não encontrado), a classe .error é aplicada ao .camera-box, exibindo a mensagem "Não foi possível acessar a câmera..." no lugar do placeholder padrão, e o status central muda para "Câmera indisponível". Importante lembrar que captura de câmera exige HTTPS em produção (funciona em localhost sem certificado, mas não em domínios http:// simples).
+### 2.3 Desempenho
 
-Arquivos
-prototipo-fresh-food.html — protótipo funcional único, já publicado como artifact.
-Este documento (doc-implementacao-fresh-food.md) — referência de implementação para consulta durante o desenvolvimento ou para compor a documentação do Projeto de Engenharia 3.
+Testado em **570 fotos que o modelo nunca viu** (dataset *Fruits fresh and rotten for classification*, Kaggle):
+
+| Fruta | Acurácia | Precisão | Recall | F1 |
+|---|---|---|---|---|
+| Banana | 99,0% | 99,1% | 98,9% | 99,0% |
+| Maçã | 93,1% | 93,1% | 92,8% | 93,0% |
+| Laranja | 91,9% | 92,6% | 91,8% | 91,8% |
+| **Geral** | **94,7%** | **95,0%** | **94,5%** | **94,7%** |
+
+Detalhes completos no relatório em PDF "Fresh Food: como o modelo foi testado" e em `Docs/treino/README.md`.
+
+---
+
+## 3. Identidade visual
+
+### 3.1 Cores (tema claro)
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--background` | `#f4efe4` | Fundo da página (creme) |
+| `--card-bg` | `#fbf8f1` | Cartões |
+| `--header-bg` | `#fbf8f1` | Cabeçalho e faixa das frutas |
+| `--chip-bg` | `#ece6d8` | Fundo dos círculos das frutas |
+| `--border-light` | `#ddd4c2` | Bordas |
+| `--text` | `#1f2a1e` | Texto principal |
+| `--text-soft` | `#5e6656` | Texto secundário |
+| `--accent` | `#2f5d3a` | Verde da marca: botões, anel da fruta escolhida, botão + |
+| `--accent-soft` | `#e3ead9` | Faixa verde clara (cartão dos 3 passos no computador) |
+| `--highlight` | `#e8b923` | Amarelo-banana (detalhes) |
+| `--success` | `#3f7d3c` | Estado Fresco / "Pode consumir" |
+| `--warning` | `#c98a12` | Estado Moderado / "Consuma logo" |
+| `--danger` | `#b5482b` | Estado Passado / "Melhor não consumir" |
+
+As três cores de estado lembram frutas de verdade: folha (fresco), banana madura (moderado) e terracota (fruta machucada).
+
+Existe também um **modo escuro automático**, que aparece quando o aparelho está no tema escuro. **Decisão pendente:** manter automático, deixar sempre claro ou colocar um botão para a pessoa escolher.
+
+### 3.2 Fontes
+
+- **Fraunces** (com serifa): títulos e nome do app.
+- **Work Sans**: textos e botões.
+
+### 3.3 Ícones e imagens
+
+- Ícones de linha desenhados em SVG (sem emojis).
+- Imagens dos 3 passos em `IMG/passos/`, com fundo removido.
+- Ícones do app instalado em `IMG/icones/`.
+
+---
+
+## 4. Telas e componentes
+
+### 4.1 Cabeçalho e frutas
+
+- Logo e nome **Fresh Food**.
+- **Banana, Maçã e Laranja** em círculos (estilo Plantix). Tocar escolhe a fruta (anel verde) e o botão principal vira "Analisar banana", por exemplo. Tocar de novo desmarca e o sistema volta a procurar qualquer uma das três.
+- **Botão +**: aba branca presa na borda, com círculo verde. **Em desenvolvimento**: ao tocar, mostra o aviso "Opção em desenvolvimento: em breve você poderá adicionar outras frutas."
+
+### 4.2 Uso sem internet
+
+Cartão que mostra se o app já está guardado no aparelho:
+
+| Estado | Texto | Quando |
+|---|---|---|
+| Preparando | "Preparando..." com ícone girando | Guardando o site e o modelo |
+| Pronto | "Pronto" com ✓ verde | Tudo guardado; pode usar sem internet |
+| Sem internet | "Funcionando sem internet" | A conexão caiu, usando a versão guardada |
+| Indisponível | "Indisponível" | Navegador sem suporte |
+
+Ao tocar, mostra uma explicação. Quando o navegador permite, oferece **instalar o app** na tela inicial.
+
+### 4.3 Cartão dos 3 passos
+
+1. **Fotografe a fruta** (celular com maçã)
+2. **Ver diagnóstico** (maçã com ✓)
+3. **Pode consumir?** (maçã mordida)
+
+Botão **"Analisar fruta"**, que abre a câmera, e link **"ou escolher uma foto da galeria"**.
+
+### 4.4 Câmera
+
+- **Celular:** tela cheia, com seta de voltar, moldura branca no centro, aviso embaixo da moldura e barra preta com galeria, botão redondo de fotografar e **?** (dicas para uma boa foto).
+- **Computador:** a mesma câmera numa janela no centro da tela, com fundo escurecido.
+- O aviso muda de "Aponte a câmera para uma banana, maçã ou laranja" para "Laranja encontrada! Pode fotografar." quando acha a fruta.
+- Ao voltar ou ao terminar a análise, a câmera é desligada para economizar bateria.
+
+### 4.5 Resultado
+
+Na ordem em que aparece:
+
+1. **Resposta "Pode consumir?"**, em destaque e na cor do estado:
+   - Fresco: **"Pode consumir"**
+   - Moderado: **"Consuma logo"**, com dica de uso (suco, vitamina, bolo)
+   - Passado: **"Melhor não consumir"**
+2. Aviso: o resultado é uma estimativa pela aparência da casca; conferir cheiro e firmeza antes de comer.
+3. **Cartão com a foto** analisada, com botões **Baixar**, **Compartilhar** (quando o aparelho permite) e **Nova foto**.
+4. **Detalhes**: fruta, estado, chance de cada estado e certeza da detecção.
+5. **"Por que deu esse resultado"**: recorte analisado, mapa da casca ponto a ponto, composição da casca, régua da chance de estar estragada e as medidas que mais pesaram (conta real da regressão logística).
+6. **Confiabilidade da foto**: nitidez, se a foto é parecida com o treino, iluminação e tempo de análise.
+
+Na tela inicial o bloco de resultado fica escondido até a primeira análise.
+
+### 4.6 Avisos de confiabilidade
+
+| Aviso | Como funciona | Limite |
+|---|---|---|
+| Foto tremida | Variância do Laplaciano (bordas) numa versão 256×256 da fruta | Abaixo de 12 |
+| Foto fora do padrão | Distância de Mahalanobis entre as 8 medidas e as fotos de treino | 4,2 (banana), 5,3 (maçã), 5,7 (laranja) |
+| Iluminação | Brilho médio da área analisada | Entre 22% e 88% |
+
+### 4.7 Histórico ("Suas análises")
+
+- Guarda as **últimas 12 análises** no próprio aparelho (IndexedDB), com miniatura, data e o selo da resposta.
+- Tocar num item reabre o resultado completo, inclusive o painel de explicação.
+- Botão **Limpar** (pede confirmação).
+- Contador "X de 12", que fica amarelo quando enche.
+
+**Avisos de limite:**
+
+| Situação | Mensagem |
+|---|---|
+| Chegou a 12 | "Seu histórico chegou a 12 análises, o limite. Nas próximas, a mais antiga será apagada." |
+| Da 13ª em diante | "Histórico cheio: guardamos só as últimas 12 análises. A mais antiga foi apagada." |
+| Espaço do navegador acabou | Apaga as mais antigas e avisa |
+| Espaço acima de 90% | Pede para tocar em Limpar |
+
+### 4.8 Recados na tela (toast)
+
+Aviso escuro na parte de baixo da tela, que some sozinho depois de 5 segundos. Usado para o botão +, histórico, uso sem internet e quando a foto da galeria não tem fruta.
+
+---
+
+## 5. Organização da tela
+
+### 5.1 Celular (até 1100px)
+
+Uma coluna, nesta ordem:
+
+1. Cabeçalho (logo e nome) e faixa das frutas, de ponta a ponta
+2. Uso sem internet
+3. Cartão dos 3 passos
+4. Suas análises (rolagem para o lado)
+5. Resultado (só depois de uma análise; nessa hora os itens 2 a 4 somem e aparece "← Início")
+
+### 5.2 Computador (acima de 1100px), modelo B
+
+```
+┌ logo Fresh Food ...... [Banana] [Maçã] [Laranja] [+] ...... Uso sem internet ┐
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Faixa verde: 3 passos ..........................  [ Analisar fruta ]          │
+├────────────────────────────────────────────────────┬─────────────────────────┤
+│ Resultado                                          │ Suas análises (lista)   │
+│ (antes da 1ª análise: "Seu diagnóstico aparece     │                         │
+│  aqui", com borda tracejada)                       │                         │
+└────────────────────────────────────────────────────┴─────────────────────────┘
+```
+
+- Barra no topo de ponta a ponta, com as frutas em botões pequenos de cantos levemente arredondados.
+- A tela inicial nunca some: dá para analisar outra fruta sem voltar.
+- A barra lateral antiga foi retirada.
+
+---
+
+## 6. Funcionamento sem internet
+
+- `sw.js` (service worker) guarda o site, as bibliotecas (`Js/vendor/tf.min.js` e `Js/vendor/coco-ssd.min.js`), as imagens e o modelo COCO-SSD.
+- `manifest.webmanifest` permite instalar o app, com os ícones de `IMG/icones/`.
+- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v13`). Sem isso, quem já abriu o site continua vendo a versão antiga.
+
+---
+
+## 7. Arquivos
+
+| Arquivo | Função |
+|---|---|
+| `index.html` | Estrutura da página |
+| `Assets/css/stayle.css` | Visual (cores, celular e computador) |
+| `Js/escript.js` | Câmera, análise, resultado, histórico e uso sem internet |
+| `Js/vendor/` | TensorFlow.js e COCO-SSD guardados no projeto |
+| `sw.js` | Service worker (uso sem internet) |
+| `manifest.webmanifest` | Dados para instalar o app |
+| `IMG/passos/` | Imagens do cartão dos 3 passos |
+| `IMG/icones/` | Ícones do app instalado |
+| `Docs/treino/` | Scripts de treino e avaliação, métricas e README |
+| `Docs/plan.md` | Este documento |
+
+---
+
+## 8. Limitações conhecidas
+
+- As fotos de teste são, em sua maioria, de fundo branco e boa luz. **Ainda falta testar com fotos reais de celular.**
+- O estado **Moderado** não pode ser validado, porque o dataset só tem fotos marcadas como fresca ou estragada.
+- **Maçã amarela** tende a sair como passada (a cor viva da maçã cobre só vermelho e verde).
+- **Laranja** que apodrece mantendo a cor laranja engana o modelo.
+- O modelo só vê a casca: não percebe cheiro, firmeza nem o interior da fruta.
+
+---
+
+## 9. Próximos passos
+
+- [ ] Testar com 30 fotos reais de celular e registrar os acertos
+- [ ] Confirmar o funcionamento sem internet num celular (modo avião)
+- [ ] Decidir o modo escuro (automático, sempre claro ou botão)
+- [ ] Definir a função do botão + (adicionar outras frutas)
+- [ ] Incluir a faixa do amarelo para maçã e treinar de novo
+- [ ] Medir o tempo de análise em pelo menos três celulares

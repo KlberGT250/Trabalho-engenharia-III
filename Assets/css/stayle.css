@@ -1646,9 +1646,13 @@ select {
 	stroke-linecap: round;
 }
 
-/* Desativado por enquanto: mantém a aparência, só não responde ao toque */
-.fruit-add:disabled {
-	cursor: default;
+/* Em desenvolvimento: ao tocar, mostra um aviso */
+.fruit-add {
+	cursor: pointer;
+}
+
+.fruit-add:active {
+	transform: scale(0.94);
 }
 
 @media (prefers-color-scheme: dark) {

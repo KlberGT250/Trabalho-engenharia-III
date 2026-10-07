@@ -1379,6 +1379,11 @@ cameraHelp?.addEventListener("click", (event) => {
 	if (event.target === cameraHelp) cameraHelp.hidden = true;
 });
 
+// Botão "+": ainda não funciona, só avisa que está em desenvolvimento
+document.querySelector("#fruit-add")?.addEventListener("click", () => {
+	showToast("Opção em desenvolvimento: em breve você poderá adicionar outras frutas.");
+});
+
 // Recado rápido na parte de baixo da tela (quando a câmera está fechada)
 let toastTimer;
 function showToast(message) {
