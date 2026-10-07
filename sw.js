@@ -5,7 +5,7 @@
 // Sempre que mudar algum arquivo do site, aumente o número da VERSAO.
 // Assim o celular baixa a versão nova e apaga a antiga.
 // ---------------------------------------------------------------
-const VERSAO = "fresh-food-v15";
+const VERSAO = "fresh-food-v16";
 const CACHE_SITE = `${VERSAO}-site`;
 const CACHE_MODELO = "fresh-food-modelo"; // o modelo não muda, então não depende da versão
 const CACHE_FONTES = "fresh-food-fontes";
@@ -19,6 +19,8 @@ const ARQUIVOS_SITE = [
 	"./Js/escript.js",
 	"./Js/vendor/tf.min.js",
 	"./Js/vendor/coco-ssd.min.js",
+	"./Assets/fonts/fraunces.woff2",
+	"./Assets/fonts/work-sans.woff2",
 	"./IMG/logo.png",
 	"./IMG/banana.png",
 	"./IMG/maca.png",

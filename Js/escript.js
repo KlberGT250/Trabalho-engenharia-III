@@ -851,6 +851,20 @@ function buildOverlay(prediction, mask) {
 	return overlay;
 }
 
+async function carregarFontesDoCartao() {
+	if (!document.fonts?.load) return;
+	try {
+		await Promise.all([
+			document.fonts.load('600 76px "Fraunces"'),
+			document.fonts.load('400 28px "Work Sans"'),
+			document.fonts.load('600 30px "Work Sans"'),
+			document.fonts.load('700 32px "Work Sans"'),
+		]);
+	} catch (error) {
+		console.warn("Fontes não carregaram, o cartão usa a fonte padrão", error);
+	}
+}
+
 function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning }) {
 	const W = 1080;
 	const PAD = 60;
@@ -1114,6 +1128,9 @@ async function analyzePhoto() {
 
 	renderFruitState(fruitKey, freshness, detectionConfidence);
 	showWarnings(warnings.filter(Boolean));
+
+	// Garante que as fontes já carregaram antes de desenhar o cartão (senão ele sai com Arial)
+	await carregarFontesDoCartao();
 
 	// Caixa verde e defeitos pintados de vermelho por cima da foto
 	const overlay = buildOverlay(prediction, mask);

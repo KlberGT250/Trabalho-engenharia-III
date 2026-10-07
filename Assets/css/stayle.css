@@ -1,3 +1,25 @@
+/* ---------------------------------------------------------------
+   Fontes (arquivos em Assets/fonts, licença SIL Open Font License)
+   Fraunces: títulos, com ajuste automático de tamanho ótico.
+   Work Sans: textos e botões. As duas são "variáveis": um arquivo
+   só tem todos os pesos, do 400 ao 700.
+   --------------------------------------------------------------- */
+@font-face {
+	font-family: "Fraunces";
+	src: url("../fonts/fraunces.woff2") format("woff2");
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Work Sans";
+	src: url("../fonts/work-sans.woff2") format("woff2");
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
 html {
 	scroll-behavior: smooth;
 }
@@ -824,7 +846,7 @@ select {
 	height: 1.9rem;
 	overflow: hidden;
 	border-radius: 4px;
-	font-size: 0.78rem;
+	font-size: 0.8rem;
 	font-weight: 600;
 }
 
@@ -858,7 +880,7 @@ select {
 	border-radius: 4px;
 	background: var(--text);
 	color: var(--card-bg);
-	font-size: 0.75rem;
+	font-size: 0.8rem;
 	font-weight: 600;
 	white-space: nowrap;
 }
@@ -871,7 +893,7 @@ select {
 	height: 1.1rem;
 	margin-top: 0.3rem;
 	color: var(--text-soft);
-	font-size: 0.72rem;
+	font-size: 0.8rem;
 }
 
 .scale-ticks span {
@@ -890,7 +912,7 @@ select {
 	justify-content: space-between;
 	margin: 0.3rem 0 0.5rem;
 	color: var(--text-soft);
-	font-size: 0.75rem;
+	font-size: 0.8rem;
 }
 
 .explain-factors {
@@ -915,7 +937,7 @@ select {
 
 .factor-side {
 	grid-area: side;
-	font-size: 0.78rem;
+	font-size: 0.8rem;
 	font-weight: 600;
 }
 
@@ -1800,7 +1822,7 @@ body.camera-open {
 
 .offline-pill-hint {
 	color: var(--text-soft);
-	font-size: 0.78rem;
+	font-size: 0.8rem;
 }
 
 .offline-pill-icon {
@@ -2470,7 +2492,7 @@ body.camera-open {
 	margin-top: 0.05rem;
 	border-radius: 50%;
 	color: #ffffff;
-	font-size: 0.75rem;
+	font-size: 0.8rem;
 	font-weight: 700;
 }
 
@@ -2483,4 +2505,92 @@ body.camera-open {
 	.verdict-why {
 		border-top-color: rgba(239, 233, 220, 0.16);
 	}
+}
+
+/* ---------------------------------------------------------------
+   Acabamento da tipografia
+   --------------------------------------------------------------- */
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	font-size: 1rem;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+	font-optical-sizing: auto;
+	font-kerning: normal;
+}
+
+/* Títulos em Fraunces: um pouco mais justos e com o tamanho ótico certo */
+.app-header-name,
+.verdict-title,
+.history-head h2,
+.explain-panel h3,
+.camera-help-box h3,
+.result-empty strong,
+.detection-result strong#freshness-status,
+.detection-result strong#detected-fruit {
+	font-family: var(--font-display);
+	font-optical-sizing: auto;
+	letter-spacing: -0.015em;
+	line-height: 1.15;
+}
+
+.app-header-name {
+	font-weight: 600;
+	letter-spacing: -0.02em;
+}
+
+.verdict-title {
+	font-weight: 650;
+}
+
+/* Textos de apoio: cinza legível e espaçamento confortável */
+.verdict-tip,
+.verdict-note,
+.explain-lead,
+.explain-note,
+.freshness-reason,
+.result-empty p,
+.camera-help-box ul,
+.offline-pill-hint {
+	line-height: 1.5;
+}
+
+/* Botões: peso firme e letra levemente mais aberta */
+.steps-button,
+.action-primary,
+.action-secondary,
+.camera-help-close,
+.fruit-chip-name,
+.history-info strong {
+	font-weight: 600;
+	letter-spacing: 0.005em;
+}
+
+.steps-button {
+	font-size: 1.1rem;
+}
+
+/* Números alinhados (porcentagens e datas) */
+.verdict-fruit,
+.history-date,
+.history-count,
+#pct-fresco,
+#pct-moderado,
+#pct-passado,
+#confidence-value {
+	font-variant-numeric: tabular-nums;
+}
+
+/* Rótulos pequenos com um pouco mais de peso para não sumirem */
+.result-label,
+.offline-pill-label,
+.verdict-fruit,
+.history-date {
+	font-weight: 500;
 }

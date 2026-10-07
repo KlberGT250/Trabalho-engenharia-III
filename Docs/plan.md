@@ -98,6 +98,9 @@ Existe também um **modo escuro automático**, que aparece quando o aparelho est
 
 - **Fraunces** (com serifa): títulos e nome do app.
 - **Work Sans**: textos e botões.
+- As duas fontes ficam guardadas no próprio projeto, em `Assets/fonts/` (arquivos `.woff2` variáveis, cerca de 117 KB no total), com as licenças OFL junto. Não dependem mais do Google Fonts, então carregam mais rápido e funcionam sem internet.
+- Tamanho mínimo de texto: 0.8rem (cerca de 13 px). Números (porcentagens, datas) usam algarismos de mesma largura para não "pular".
+- O cartão de resultado para baixar espera as fontes carregarem antes de ser desenhado.
 
 ### 3.3 Ícones e imagens
 
@@ -225,7 +228,7 @@ Uma coluna, nesta ordem:
 
 - `sw.js` (service worker) guarda o site, as bibliotecas (`Js/vendor/tf.min.js` e `Js/vendor/coco-ssd.min.js`), as imagens e o modelo COCO-SSD.
 - `manifest.webmanifest` permite instalar o app, com os ícones de `IMG/icones/`.
-- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v15`). Sem isso, quem já abriu o site continua vendo a versão antiga.
+- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v16`). Sem isso, quem já abriu o site continua vendo a versão antiga.
 
 ---
 
@@ -235,6 +238,7 @@ Uma coluna, nesta ordem:
 |---|---|
 | `index.html` | Estrutura da página |
 | `Assets/css/stayle.css` | Visual (cores, celular e computador) |
+| `Assets/fonts/` | Fontes Fraunces e Work Sans com as licenças |
 | `Js/escript.js` | Câmera, análise, resultado, histórico e uso sem internet |
 | `Js/vendor/` | TensorFlow.js e COCO-SSD guardados no projeto |
 | `sw.js` | Service worker (uso sem internet) |
@@ -281,3 +285,12 @@ Correções feitas depois da revisão geral do projeto:
 | Ao abrir a câmera pelo teclado, o foco ficava fora dela | O foco vai para a câmera, o Tab fica dentro dela e, ao fechar, volta para o botão |
 | A linha do "Por quê?" sumia no modo escuro | Linha visível no modo escuro |
 | Código da barra lateral antiga e 65 regras de CSS sem uso | Removidos (CSS cerca de 12% menor) |
+
+## 11. Melhora das fontes (v16)
+
+| Antes | Agora |
+|---|---|
+| Fontes baixadas do Google a cada visita | Fontes guardadas no projeto e no modo sem internet |
+| Alguns textos com 11 a 12 px | Nenhum texto menor que cerca de 13 px |
+| Cartão para baixar podia sair com fonte padrão | Cartão espera as fontes antes de ser desenhado |
+| Títulos e botões sem ajuste fino | Títulos mais justos, botões e números mais firmes, linhas com mais espaço |
