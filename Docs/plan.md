@@ -45,16 +45,7 @@ Fruta detectada (topo) Ao clicar, a seção volta primeiro ao estado vazio (#rsE
 
 Status de frescor (meio) A função pickFreshness() sorteia um estado entre Fresco, Moderado e Passado usando um pool ponderado (pesos 5/3/1 — o triplo de chance de "Fresco" em relação a "Passado"), simulando uma distribuição realista de frutas testadas. O badge recebe a classe correspondente (.fresco, .moderado, .passado), que já existe no CSS com as cores semânticas da tabela acima, e o texto de recomendação é preenchido a partir do campo rec de cada estado.
 
-Valores nutricionais (corpo) fillNutrition(fruitName) lê o objeto fruitData[fruitName].nutrition e gera dinamicamente os <li> da lista — nada é hardcoded no HTML. Os valores por fruta (Banana, Maçã, Laranja), por 100g:
-
-Nutriente	Banana	Maçã	Laranja
-Calorias	89 kcal	52 kcal	47 kcal
-Carboidratos	22.8 g	13.8 g	11.8 g
-Proteínas	1.1 g	0.3 g	0.9 g
-Fibras	2.6 g	2.4 g	2.4 g
-Vitamina C	8.7 mg	4.6 mg	53.2 mg
-Potássio	358 mg	107 mg	181 mg
-Reset entre seleções Se o usuário trocar de fruta antes ou depois de uma detecção concluída, startCamera reseta imediatamente os três blocos da direita e o painel de status central para o estado neutro, evitando mostrar dados da fruta anterior enquanto a nova é "detectada".
+Valores nutricionais (corpo) fillNutrition(fruitName) lê o objeto fruitData[fruitName].nutrition e gera dinamicamente os <li> da lista — nada é hardcoded 
 
 # Ponto de integração do COCO-SSD
 O bloco setTimeout(() => {...}, 1200) dentro de startCamera é a simulação temporária — ele existe só para validar visualmente o comportamento das três seções sem depender do modelo treinado. Está marcado no código com um comentário explícito. Na implementação final, esse bloco deve ser substituído por:

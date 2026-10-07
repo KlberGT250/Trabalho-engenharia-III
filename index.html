@@ -52,152 +52,267 @@
 
         <main id="main" class="main-content">
             <section class="hero-panel" id="sobre">
-                <div class="detection-section" id="testar" aria-labelledby="detection-title">
-                    <header class="topbar">
-                        <img src="./IMG/logo.png" alt="" class="topbar-logo">
-                        <span class="topbar-name">Fresh Food</span>
-                    </header>
-                    <p class="section-badge">Banana, maçã ou laranja</p>
-                    <div class="app-status">
-                        <span id="offline-status" class="offline-status" role="status" hidden></span>
-                        <button id="install-button" class="install-button" type="button" hidden>
-                            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5M5 19h14"/></svg>Instalar no celular
-                        </button>
-                    </div>
-                    <h2 id="detection-title">Fotografe uma fruta</h2>
+                <div class="detection-section" id="testar" aria-label="Fotografe uma fruta">
+                    <header class="app-header">
+                        <div class="app-header-top">
+                            <img src="./IMG/icones/icone-192.png" alt="" class="app-header-logo">
+                            <span class="app-header-name">Fresh Food</span>
+                        </div>
 
-                    <div class="camera-card">
+                    </header>
+
+                    <!-- Frutas: no celular continuam o cabeçalho, no computador viram um cartão -->
+                    <div class="fruit-bar">
+                        <span class="fruit-bar-label">Escolha a fruta <small>(opcional)</small></span>
+                        <div class="fruit-row">
+                            <div class="fruit-strip" role="group" aria-label="Escolha a fruta">
+                            <button class="fruit-option fruit-chip" type="button" data-fruit="banana" aria-pressed="false">
+                                <span class="fruit-chip-circle"><img src="./IMG/banana.png" alt=""></span>
+                                <span class="fruit-chip-name">Banana</span>
+                            </button>
+                            <button class="fruit-option fruit-chip" type="button" data-fruit="apple" aria-pressed="false">
+                                <span class="fruit-chip-circle"><img src="./IMG/maca.png" alt=""></span>
+                                <span class="fruit-chip-name">Maçã</span>
+                            </button>
+                            <button class="fruit-option fruit-chip" type="button" data-fruit="orange" aria-pressed="false">
+                                <span class="fruit-chip-circle"><img src="./IMG/laranja.png" alt=""></span>
+                                <span class="fruit-chip-name">Laranja</span>
+                            </button>
+                            </div>
+
+                            <!-- Botão de adicionar fruta: desativado por enquanto -->
+                            <div class="fruit-add-tab">
+                                <button class="fruit-add" type="button" disabled aria-label="Adicionar fruta (em breve)" title="Em breve">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botão "Uso sem internet": mostra se o app já está guardado no celular -->
+                    <button id="offline-pill" class="offline-pill is-preparing" type="button">
+                        <span class="offline-pill-text">
+                            <span class="offline-pill-label">Uso sem internet</span>
+                            <strong id="offline-pill-status">Preparando...</strong>
+                            <span id="offline-pill-hint" class="offline-pill-hint">Deixe a internet ligada por alguns segundos</span>
+                        </span>
+                        <span class="offline-pill-icon" aria-hidden="true">
+                            <svg class="op-ready" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16.2 9.5"/></svg>
+                            <svg class="op-preparing" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
+                            <svg class="op-offline" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 8.6A6 6 0 0 0 6 13.5a4 4 0 0 0 1 7.5h10.5M12 6.5a6 6 0 0 1 6 6 4 4 0 0 1 2 6.8"/></svg>
+                            <svg class="op-off" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+                        </span>
+                    </button>
+
+
+                    <div class="steps-card" id="steps-card">
+                        <ol class="steps">
+                            <li class="step">
+                                <img class="step-img" src="./IMG/passos/passo-celular.png" alt="">
+                                <span>Fotografe<br>a fruta</span>
+                            </li>
+                            <li class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></li>
+                            <li class="step">
+                                <img class="step-img" src="./IMG/passos/passo-maca-ok.png" alt="">
+                                <span>Ver<br>diagnóstico</span>
+                            </li>
+                            <li class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></li>
+                            <li class="step">
+                                <img class="step-img" src="./IMG/passos/passo-maca-mordida.png" alt="">
+                                <span>Pode<br>consumir?</span>
+                            </li>
+                        </ol>
+                        <button id="analyze-button" class="steps-button" type="button">
+                            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="analyze-label">Analisar fruta</span>
+                        </button>
+                        <button id="steps-gallery" class="steps-link" type="button">ou escolher uma foto da galeria</button>
+                    </div>
+
+                    <!-- Histórico: últimas análises, guardadas só neste celular -->
+                    <section id="history" class="history" aria-labelledby="history-title" hidden>
+                        <div class="history-head">
+                            <h2 id="history-title">Suas análises</h2>
+                            <span id="history-count" class="history-count"></span>
+                            <button id="history-clear" class="history-clear" type="button">Limpar</button>
+                        </div>
+                        <div id="history-list" class="history-list" role="list"></div>
+                    </section>
+
+                    <div class="results">
+                        <!-- Só no computador: aparece antes da primeira análise -->
+                        <div class="result-empty" aria-hidden="true">
+                            <img src="./IMG/passos/passo-maca-ok.png" alt="">
+                            <strong>Seu diagnóstico aparece aqui</strong>
+                            <p>Escolha a fruta, toque em "Analisar fruta" ou envie uma foto da galeria.</p>
+                        </div>
+
+                        <section id="photo-result" class="photo-result" aria-label="Resultado da foto" hidden>
+                            <button id="result-home" class="result-home" type="button">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>Início
+                            </button>
+
+                            <!-- Resposta direta: pode ou não consumir -->
+                            <div id="verdict" class="verdict" role="status">
+                                <span class="verdict-icon" aria-hidden="true">
+                                    <svg class="v-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                                    <svg class="v-soon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg>
+                                    <svg class="v-no" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>
+                                </span>
+                                <div class="verdict-text">
+                                    <span id="verdict-fruit" class="verdict-fruit"></span>
+                                    <strong id="verdict-title" class="verdict-title"></strong>
+                                    <p id="verdict-tip" class="verdict-tip"></p>
+                                </div>
+                            </div>
+                            <p class="verdict-note">O resultado é uma estimativa pela aparência da casca. Antes de comer, confira também o cheiro e se a fruta está firme.</p>
+
+                            <img id="result-card" class="result-card" alt="Foto analisada com o resultado do frescor">
+                            <div class="result-actions">
+                                <button id="download-button" class="action-primary" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>Baixar</button>
+                                <button id="share-button" class="action-secondary" type="button" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 12v8h14v-8"/></svg>Compartilhar</button>
+                                <button id="new-photo-button" class="action-secondary" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2-5M5 4v4h4"/></svg>Nova foto</button>
+                            </div>
+                        </section>
+
+                        <section id="detection-result" class="detection-result" aria-live="polite" aria-label="Resultado da detecção" hidden>
+                            <ul id="result-warnings" class="result-warnings" hidden></ul>
+                            <div>
+                                <span class="result-label">Fruta detectada</span>
+                                <strong id="detected-fruit">Aguardando</strong>
+                            </div>
+                            <div>
+                                <span class="result-label">Frescor</span>
+                                <strong id="freshness-status" class="status-fresh">Aguardando</strong>
+                            </div>
+
+                            <div class="class-bars">
+                                <span class="result-label">Chance de cada estado</span>
+                                <div class="class-row">
+                                    <span class="class-name">Fresco</span>
+                                    <div class="class-track"><span id="bar-fresco" class="bar-fresco"></span></div>
+                                    <strong id="pct-fresco">0%</strong>
+                                </div>
+                                <div class="class-row">
+                                    <span class="class-name">Moderado</span>
+                                    <div class="class-track"><span id="bar-moderado" class="bar-moderado"></span></div>
+                                    <strong id="pct-moderado">0%</strong>
+                                </div>
+                                <div class="class-row">
+                                    <span class="class-name">Passado</span>
+                                    <div class="class-track"><span id="bar-passado" class="bar-passado"></span></div>
+                                    <strong id="pct-passado">0%</strong>
+                                </div>
+                                <p id="freshness-reason" class="freshness-reason">O motivo do resultado aparece aqui.</p>
+                            </div>
+
+                            <div class="confidence-result">
+                                <div class="confidence-heading">
+                                    <span class="result-label">Certeza de que é a fruta</span>
+                                    <strong id="confidence-value">0%</strong>
+                                </div>
+                                <div class="confidence-track" role="progressbar" aria-label="Certeza de que é a fruta" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                    <span id="confidence-bar"></span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="explain-panel" class="explain-panel" aria-labelledby="explain-title" hidden>
+                            <h3 id="explain-title">Por que deu esse resultado</h3>
+                            <p class="explain-lead">O sistema recorta a fruta, olha a cor de cada ponto da casca e um classificador transforma essas medidas na chance de ela estar estragada.</p>
+
+                            <div class="explain-images">
+                                <figure>
+                                    <canvas id="explain-crop" width="160" height="160" aria-label="Recorte da fruta usado na análise"></canvas>
+                                    <figcaption>O que o sistema analisou</figcaption>
+                                </figure>
+                                <figure>
+                                    <canvas id="explain-map" width="160" height="160" aria-label="Mapa com a classificação de cada ponto da casca"></canvas>
+                                    <figcaption>Como cada ponto foi classificado</figcaption>
+                                </figure>
+                            </div>
+
+                            <div class="explain-block">
+                                <span class="result-label">Confiabilidade da foto</span>
+                                <ul id="explain-checks" class="explain-checks"></ul>
+                            </div>
+
+                            <div class="explain-block">
+                                <span class="result-label">Do que a casca é feita</span>
+                                <div id="explain-stack" class="explain-stack" role="img" aria-label="Composição da casca"></div>
+                                <ul id="explain-legend" class="explain-legend"></ul>
+                            </div>
+
+                            <div class="explain-block">
+                                <span class="result-label">Chance de estar estragada</span>
+                                <div class="explain-scale">
+                                    <div class="scale-zones" aria-hidden="true">
+                                        <span class="zone-fresco">Fresco</span>
+                                        <span class="zone-moderado">Moderado</span>
+                                        <span class="zone-passado">Passado</span>
+                                    </div>
+                                    <span id="scale-marker" class="scale-marker"></span>
+                                </div>
+                                <div class="scale-ticks" aria-hidden="true"><span>0%</span><span>40%</span><span>70%</span><span>100%</span></div>
+                                <p id="explain-chance" class="explain-note"></p>
+                            </div>
+
+                            <div class="explain-block">
+                                <span class="result-label">O que mais pesou na decisão</span>
+                                <div class="factor-axis" aria-hidden="true"><span>← puxou para fresco</span><span>empurrou para passado →</span></div>
+                                <ul id="explain-factors" class="explain-factors"></ul>
+                                <p class="explain-note">Cada medida é comparada com a média das fotos usadas no treino. Quanto maior a barra, mais aquela medida pesou.</p>
+                            </div>
+                        </section>
+                    </div>
+
+
+                    <!-- Câmera em tela cheia: abre ao tocar em "Analisar fruta" -->
+                    <div class="camera-card" role="dialog" aria-modal="true" aria-label="Câmera" hidden>
                         <div class="camera-frame">
                             <video id="camera-feed" autoplay muted playsinline aria-label="Imagem da câmera"></video>
                             <canvas id="detection-canvas" aria-hidden="true"></canvas>
+
+                            <button id="camera-back" class="camera-back" type="button" aria-label="Voltar">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>
+                            </button>
+
+                            <div class="viewfinder" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
                             <div id="live-hint" class="live-hint" role="status" hidden></div>
+
                             <div id="camera-lock" class="camera-lock">
-                                <div id="camera-message" class="camera-message">Toque em Automático ou escolha uma fruta para abrir a câmera. Você também pode usar uma foto da galeria.</div>
+                                <div id="camera-message" class="camera-message">Abrindo a câmera...</div>
                             </div>
-                        </div>
 
-                        <div class="photo-actions">
-                            <button id="capture-button" class="action-primary" type="button" disabled><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Analisar foto</button>
-                            <button id="gallery-button" class="action-secondary" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M3.5 16l5-5 4 4 3-3 5 5"/><circle cx="15.5" cy="9.5" r="1.3"/></svg>Escolher da galeria</button>
-                            <input id="gallery-input" type="file" accept="image/*" hidden>
-                        </div>
-                    </div>
-
-                    <section id="photo-result" class="photo-result" aria-label="Resultado da foto" hidden>
-                        <img id="result-card" class="result-card" alt="Foto analisada com o resultado do frescor">
-                        <div class="result-actions">
-                            <button id="download-button" class="action-primary" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>Baixar</button>
-                            <button id="share-button" class="action-secondary" type="button" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 12v8h14v-8"/></svg>Compartilhar</button>
-                            <button id="new-photo-button" class="action-secondary" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2-5M5 4v4h4"/></svg>Nova foto</button>
-                        </div>
-                    </section>
-
-                    <div class="fruit-selector" role="group" aria-label="Escolha a fruta" id="fruit-selector">
-                        <button class="fruit-option" type="button" data-fruit="auto" aria-pressed="false">
-                            <svg class="ico auto-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><circle cx="12" cy="12" r="3"/></svg> Automático
-                        </button>
-                        <button class="fruit-option" type="button" data-fruit="banana" aria-pressed="false">
-                            <img src="./IMG/banana.png" alt="" aria-hidden="true"> Banana
-                        </button>
-                        <button class="fruit-option" type="button" data-fruit="apple" aria-pressed="false">
-                            <img src="./IMG/maca.png" alt="" aria-hidden="true"> Maçã
-                        </button>
-                        <button class="fruit-option" type="button" data-fruit="orange" aria-pressed="false">
-                            <img src="./IMG/laranja.png" alt="" aria-hidden="true"> Laranja
-                        </button>
-                    </div>
-
-                    <button id="voice-toggle" class="voice-toggle" type="button" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg><span class="voice-label">Falar resultado: desligado</span></button>
-
-                    <section class="detection-result" aria-live="polite" aria-label="Resultado da detecção">
-                        <ul id="result-warnings" class="result-warnings" hidden></ul>
-                        <div>
-                            <span class="result-label">Fruta detectada</span>
-                            <strong id="detected-fruit">Aguardando</strong>
-                        </div>
-                        <div>
-                            <span class="result-label">Frescor</span>
-                            <strong id="freshness-status" class="status-fresh">Aguardando</strong>
-                        </div>
-
-                        <div class="class-bars">
-                            <span class="result-label">Chance de cada estado</span>
-                            <div class="class-row">
-                                <span class="class-name">Fresco</span>
-                                <div class="class-track"><span id="bar-fresco" class="bar-fresco"></span></div>
-                                <strong id="pct-fresco">0%</strong>
-                            </div>
-                            <div class="class-row">
-                                <span class="class-name">Moderado</span>
-                                <div class="class-track"><span id="bar-moderado" class="bar-moderado"></span></div>
-                                <strong id="pct-moderado">0%</strong>
-                            </div>
-                            <div class="class-row">
-                                <span class="class-name">Passado</span>
-                                <div class="class-track"><span id="bar-passado" class="bar-passado"></span></div>
-                                <strong id="pct-passado">0%</strong>
-                            </div>
-                            <p id="freshness-reason" class="freshness-reason">O motivo do resultado aparece aqui.</p>
-                        </div>
-
-                        <div class="confidence-result">
-                            <div class="confidence-heading">
-                                <span class="result-label">Certeza de que é a fruta</span>
-                                <strong id="confidence-value">0%</strong>
-                            </div>
-                            <div class="confidence-track" role="progressbar" aria-label="Certeza de que é a fruta" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                                <span id="confidence-bar"></span>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section id="explain-panel" class="explain-panel" aria-labelledby="explain-title" hidden>
-                        <h3 id="explain-title">Por que deu esse resultado</h3>
-                        <p class="explain-lead">O sistema recorta a fruta, olha a cor de cada ponto da casca e um classificador transforma essas medidas na chance de ela estar estragada.</p>
-
-                        <div class="explain-images">
-                            <figure>
-                                <canvas id="explain-crop" width="160" height="160" aria-label="Recorte da fruta usado na análise"></canvas>
-                                <figcaption>O que o sistema analisou</figcaption>
-                            </figure>
-                            <figure>
-                                <canvas id="explain-map" width="160" height="160" aria-label="Mapa com a classificação de cada ponto da casca"></canvas>
-                                <figcaption>Como cada ponto foi classificado</figcaption>
-                            </figure>
-                        </div>
-
-                        <div class="explain-block">
-                            <span class="result-label">Confiabilidade da foto</span>
-                            <ul id="explain-checks" class="explain-checks"></ul>
-                        </div>
-
-                        <div class="explain-block">
-                            <span class="result-label">Do que a casca é feita</span>
-                            <div id="explain-stack" class="explain-stack" role="img" aria-label="Composição da casca"></div>
-                            <ul id="explain-legend" class="explain-legend"></ul>
-                        </div>
-
-                        <div class="explain-block">
-                            <span class="result-label">Chance de estar estragada</span>
-                            <div class="explain-scale">
-                                <div class="scale-zones" aria-hidden="true">
-                                    <span class="zone-fresco">Fresco</span>
-                                    <span class="zone-moderado">Moderado</span>
-                                    <span class="zone-passado">Passado</span>
+                            <div id="camera-help" class="camera-help" hidden>
+                                <div class="camera-help-box" role="document">
+                                    <h3>Dicas para uma boa foto</h3>
+                                    <ul>
+                                        <li>Deixe a fruta inteira dentro da moldura</li>
+                                        <li>Fotografe uma fruta por vez</li>
+                                        <li>Prefira luz natural, sem sombra forte</li>
+                                        <li>Use um fundo liso, como uma mesa ou um pano</li>
+                                        <li>Segure o celular firme na hora de fotografar</li>
+                                    </ul>
+                                    <button id="camera-help-close" class="camera-help-close" type="button">Entendi</button>
                                 </div>
-                                <span id="scale-marker" class="scale-marker"></span>
                             </div>
-                            <div class="scale-ticks" aria-hidden="true"><span>0%</span><span>40%</span><span>70%</span><span>100%</span></div>
-                            <p id="explain-chance" class="explain-note"></p>
                         </div>
 
-                        <div class="explain-block">
-                            <span class="result-label">O que mais pesou na decisão</span>
-                            <div class="factor-axis" aria-hidden="true"><span>← puxou para fresco</span><span>empurrou para passado →</span></div>
-                            <ul id="explain-factors" class="explain-factors"></ul>
-                            <p class="explain-note">Cada medida é comparada com a média das fotos usadas no treino. Quanto maior a barra, mais aquela medida pesou.</p>
+                        <div class="camera-bar">
+                            <button id="gallery-button" class="camera-side" type="button" aria-label="Escolher foto da galeria">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 17l5-5.5 4 4 3-3 5 5"/><circle cx="15.5" cy="9" r="1.4"/></svg>
+                            </button>
+                            <button id="capture-button" class="shutter" type="button" aria-label="Fotografar e analisar" disabled><span></span></button>
+                            <button id="help-button" class="camera-side" type="button" aria-label="Dicas para fotografar">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.6"/><circle cx="12" cy="16.8" r=".6" fill="currentColor"/></svg>
+                            </button>
                         </div>
-                    </section>
+                    </div>
+
+                    <input id="gallery-input" type="file" accept="image/*" hidden>
+                    <div id="toast" class="toast" role="status" hidden></div>
+
                 </div>
             </section>
         </main>

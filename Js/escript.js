@@ -8,6 +8,26 @@ const captureButton = document.querySelector("#capture-button");
 const galleryButton = document.querySelector("#gallery-button");
 const galleryInput = document.querySelector("#gallery-input");
 const cameraCard = document.querySelector(".camera-card");
+const stepsCard = document.querySelector("#steps-card");
+const analyzeButton = document.querySelector("#analyze-button");
+const cameraBack = document.querySelector("#camera-back");
+const helpButton = document.querySelector("#help-button");
+const cameraHelp = document.querySelector("#camera-help");
+const cameraHelpClose = document.querySelector("#camera-help-close");
+const toast = document.querySelector("#toast");
+const detectionResult = document.querySelector("#detection-result");
+const verdict = document.querySelector("#verdict");
+const verdictFruit = document.querySelector("#verdict-fruit");
+const verdictTitle = document.querySelector("#verdict-title");
+const verdictTip = document.querySelector("#verdict-tip");
+
+// Resposta do passo 3 ("Pode consumir?") para cada estado
+const VEREDITOS = {
+	fresco: "Pode consumir",
+	moderado: "Consuma logo",
+	passado: "Melhor não consumir",
+};
+const stepsGallery = document.querySelector("#steps-gallery");
 const photoResult = document.querySelector("#photo-result");
 const resultCard = document.querySelector("#result-card");
 const downloadButton = document.querySelector("#download-button");
@@ -20,7 +40,6 @@ const freshnessReason = document.querySelector("#freshness-reason");
 const confidenceValue = document.querySelector("#confidence-value");
 const confidenceBar = document.querySelector("#confidence-bar");
 const confidenceTrack = document.querySelector(".confidence-track");
-const voiceToggle = document.querySelector("#voice-toggle");
 const leftSidebar = document.querySelector(".sidebar-left");
 const mobileOverlay = document.querySelector(".mobile-shell-overlay");
 
@@ -244,7 +263,6 @@ let showingResult = false;
 let missCount = 0;
 let lastCardBlob = null;
 let lastCardName = "fresh-food.png";
-let voiceOn = false;
 
 function inHueRanges(h, ranges) {
 	return ranges.some(([lo, hi]) => h >= lo && h <= hi);
@@ -693,6 +711,7 @@ function resetSidebarState(message = "Aguardando") {
 	setClassBars(null);
 	freshnessReason.textContent = "O motivo do resultado aparece aqui.";
 	if (explainPanel) explainPanel.hidden = true;
+	if (detectionResult) detectionResult.hidden = true;
 	showWarnings([]);
 	detectedFruit.textContent = message;
 	freshnessStatus.textContent = "Aguardando";
@@ -702,6 +721,17 @@ function resetSidebarState(message = "Aguardando") {
 function renderFruitState(fruitKey, freshness, detectionConfidence) {
 	const { state, percent, avg } = freshness;
 	const fruitName = fruitNames[fruitKey];
+
+	// Resposta direta no topo do resultado
+	if (verdict) {
+		verdict.className = `verdict ${state.className}`;
+		verdictFruit.textContent = `${fruitName} · ${state.label} (${percent}%)`;
+		verdictTitle.textContent = VEREDITOS[state.className];
+		// Tira o começo da dica quando ele repete o título ("Consuma logo", "Evite consumir")
+		const dica = state.tips[fruitKey].replace(/^(Consuma logo|Evite consumir)[.,]\s*/, "");
+		verdictTip.textContent = dica.charAt(0).toUpperCase() + dica.slice(1);
+	}
+	if (detectionResult) detectionResult.hidden = false;
 
 	fruitStateFilled.hidden = false;
 	fruitStateEmpty.hidden = true;
@@ -721,35 +751,6 @@ function renderFruitState(fruitKey, freshness, detectionConfidence) {
 	setConfidence(detectionConfidence ?? 0);
 	fillExplain(freshness);
 }
-
-// ---------------------------------------------------------------
-// Voz (Web Speech API, funciona offline na maioria dos navegadores)
-// ---------------------------------------------------------------
-function speak(text) {
-	if (!voiceOn || !("speechSynthesis" in window)) return;
-	window.speechSynthesis.cancel();
-	const utterance = new SpeechSynthesisUtterance(text);
-	utterance.lang = "pt-BR";
-	const voice = window.speechSynthesis.getVoices().find((v) => v.lang?.toLowerCase().startsWith("pt"));
-	if (voice) utterance.voice = voice;
-	window.speechSynthesis.speak(utterance);
-}
-
-function updateVoiceButton() {
-	voiceToggle.setAttribute("aria-pressed", voiceOn);
-	const voiceLabel = voiceToggle.querySelector(".voice-label");
-	(voiceLabel ?? voiceToggle).textContent = voiceOn ? "Falar resultado: ligado" : "Falar resultado: desligado";
-}
-
-if (!("speechSynthesis" in window)) {
-	voiceToggle.hidden = true;
-}
-
-voiceToggle.addEventListener("click", () => {
-	voiceOn = !voiceOn;
-	if (!voiceOn) window.speechSynthesis.cancel();
-	updateVoiceButton();
-});
 
 // ---------------------------------------------------------------
 // Cartão com a foto e todas as informações (imagem para baixar/compartilhar)
@@ -955,6 +956,11 @@ function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning 
 
 async function showCard(card, fruitKey) {
 	const blob = await new Promise((resolve) => card.toBlob(resolve, "image/png"));
+	presentCardBlob(blob, fruitKey);
+}
+
+// Mostra o cartão do resultado (de uma análise nova ou do histórico)
+function presentCardBlob(blob, fruitKey) {
 	lastCardBlob = blob;
 	const today = new Date().toISOString().slice(0, 10);
 	lastCardName = `fresh-food-${fruitNames[fruitKey].toLowerCase().replace("ç", "c").replace("ã", "a")}-${today}.png`;
@@ -963,11 +969,13 @@ async function showCard(card, fruitKey) {
 	resultCard.src = URL.createObjectURL(blob);
 
 	// Só mostra "Compartilhar" se o aparelho souber compartilhar imagens
-	const file = new File([blob], lastCardName, { type: "image/png" });
+	const file = new File([blob], lastCardName, { type: blob.type || "image/png" });
 	shareButton.hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
 
 	showingResult = true;
-	cameraCard.hidden = true;
+	closeCameraView();
+	setHomeVisible(false);
+	document.querySelector(".results")?.classList.add("has-result");
 	photoResult.hidden = false;
 	photoResult.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -982,7 +990,7 @@ downloadButton.addEventListener("click", () => {
 
 shareButton.addEventListener("click", async () => {
 	if (!lastCardBlob) return;
-	const file = new File([lastCardBlob], lastCardName, { type: "image/png" });
+	const file = new File([lastCardBlob], lastCardName, { type: lastCardBlob.type || "image/png" });
 	try {
 		await navigator.share({ files: [file], title: "Fresh Food", text: "Resultado da análise de frescor" });
 	} catch (error) {
@@ -994,9 +1002,13 @@ shareButton.addEventListener("click", async () => {
 newPhotoButton.addEventListener("click", () => {
 	showingResult = false;
 	photoResult.hidden = true;
-	cameraCard.hidden = false;
+	openCameraView();
 	clearCanvas();
-	window.speechSynthesis?.cancel();
+	// Se a foto veio da galeria, a câmera ainda não foi aberta
+	if (!cameraStarted) {
+		if (!selectedMode) markMode("auto");
+		startCamera();
+	}
 });
 
 // ---------------------------------------------------------------
@@ -1024,6 +1036,10 @@ function fruitWanted() {
 // Mostra um recado por cima da câmera por alguns segundos
 let noticeTimer;
 function showNotice(message) {
+	if (cameraCard.hidden) {
+		showToast(message);
+		return;
+	}
 	cameraLock.classList.remove("is-hidden");
 	cameraMessage.textContent = message;
 	window.clearTimeout(noticeTimer);
@@ -1054,7 +1070,7 @@ async function analyzePhoto() {
 			manual = true;
 		} else {
 			resetSidebarState("Nenhuma fruta na foto");
-			showNotice(`Não encontrei ${fruitWanted()} na foto. Tente mais perto, com a fruta inteira e um fundo liso, ou escolha a fruta nos botões.`);
+			showNotice(`Não encontrei ${fruitWanted()} na foto. Tente mais perto, com a fruta inteira e um fundo liso.`);
 			return;
 		}
 	}
@@ -1076,14 +1092,16 @@ async function analyzePhoto() {
 	const card = buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning });
 	await showCard(card, fruitKey);
 
-	speak(`${fruitNames[fruitKey]}: ${freshness.state.label}. ${freshness.state.tips[fruitKey]}`);
+	// Guarda no histórico (sem travar a tela se der erro)
+	saveToHistory({ fruitKey, freshness, detectionConfidence, warnings: warnings.filter(Boolean), bbox: prediction.bbox, card })
+		.catch((error) => console.warn("Não foi possível guardar no histórico", error));
 }
 
 async function runAnalysis(prepare) {
 	captureButton.disabled = true;
 	galleryButton.disabled = true;
-	const oldText = captureButton.innerHTML;
-	captureButton.textContent = "Analisando...";
+	captureButton.classList.add("is-busy");
+	setLiveHint("Analisando a fruta...");
 	try {
 		await prepare();
 		await analyzePhoto();
@@ -1091,7 +1109,7 @@ async function runAnalysis(prepare) {
 		console.error(error);
 		showNotice(errorMessages[error.name] ?? "Não foi possível analisar a foto. Tente de novo.");
 	} finally {
-		captureButton.innerHTML = oldText;
+		captureButton.classList.remove("is-busy");
 		captureButton.disabled = !cameraStarted || !detector;
 		galleryButton.disabled = false;
 	}
@@ -1155,14 +1173,14 @@ async function detectLive() {
 		if (prediction) {
 			missCount = 0;
 			drawBox(prediction);
-			setLiveHint(`${fruitNames[prediction.class]} encontrada. Pode analisar!`, true);
+			setLiveHint(`${fruitNames[prediction.class]} encontrada! Pode fotografar.`, true);
 		} else {
 			missCount++;
 			if (missCount >= MAX_MISSES) {
 				clearCanvas();
-				const dica = selectedMode === "auto" && missCount >= MAX_MISSES * 3 ? " Dica: escolha a fruta nos botões." : "";
-				const dicaManual = selectedMode !== "auto" && missCount >= MAX_MISSES * 3 ? " Pode analisar mesmo assim." : "";
-				setLiveHint(`Procurando ${fruitWanted()}...${dica}${dicaManual}`, Boolean(dicaManual));
+				const dica = selectedMode === "auto" && missCount >= MAX_MISSES * 3 ? " Dica: chegue mais perto." : "";
+				const dicaManual = selectedMode !== "auto" && missCount >= MAX_MISSES * 3 ? " Pode fotografar mesmo assim." : "";
+				setLiveHint(`Aponte a câmera para uma ${fruitWanted()}.${dica}${dicaManual}`, Boolean(dicaManual));
 			}
 		}
 	} finally {
@@ -1260,7 +1278,7 @@ async function startCamera() {
 		captureButton.disabled = false;
 		cameraLock.classList.add("is-hidden");
 		cameraFrame?.classList.remove("is-error");
-		setLiveHint(`Procurando ${fruitWanted()}...`);
+		setLiveHint(`Aponte a câmera para uma ${fruitWanted()}`);
 	} catch (error) {
 		console.error(error);
 		cameraFrame?.classList.add("is-error");
@@ -1281,15 +1299,102 @@ function selectMode(mode) {
 	missCount = 0;
 	clearCanvas();
 
-	// Se estava vendo um resultado, volta para a câmera
-	if (showingResult) newPhotoButton.click();
-	if (cameraStarted) setLiveHint(`Procurando ${fruitWanted()}...`);
+	// Abre a câmera em tela cheia
+	if (showingResult) {
+		showingResult = false;
+		photoResult.hidden = true;
+	}
+	openCameraView();
+
+	if (cameraStarted) setLiveHint(`Aponte a câmera para uma ${fruitWanted()}`);
 	startCamera();
 }
 
+// Tocar numa fruta lá em cima só escolhe a fruta (tocar de novo desmarca).
+// A câmera abre no botão "Analisar fruta".
 fruitOptions.forEach((option) => {
-	option.addEventListener("click", () => selectMode(option.dataset.fruit));
+	option.addEventListener("click", () => {
+		const fruit = option.dataset.fruit;
+		markMode(selectedMode === fruit ? null : fruit);
+		updateAnalyzeLabel();
+	});
 });
+
+function updateAnalyzeLabel() {
+	const label = analyzeButton?.querySelector(".analyze-label");
+	if (!label) return;
+	const fruit = selectedMode && selectedMode !== "auto" ? fruitNames[selectedMode].toLowerCase() : "fruta";
+	label.textContent = `Analisar ${fruit}`;
+}
+
+// ---------------------------------------------------------------
+// Câmera em tela cheia
+// ---------------------------------------------------------------
+function hideResults() {
+	document.querySelector(".results")?.classList.remove("has-result");
+	photoResult.hidden = true;
+	if (detectionResult) detectionResult.hidden = true;
+	if (explainPanel) explainPanel.hidden = true;
+}
+
+function openCameraView() {
+	setHomeVisible(false);
+	hideResults();
+	cameraCard.hidden = false;
+	document.body.classList.add("camera-open");
+	if (cameraHelp) cameraHelp.hidden = true;
+}
+
+// Fecha a câmera e desliga a imagem (economiza bateria)
+function closeCameraView() {
+	cameraCard.hidden = true;
+	document.body.classList.remove("camera-open");
+	stopCapture();
+}
+
+function stopCapture() {
+	const stream = cameraFeed.srcObject;
+	if (stream) stream.getTracks().forEach((track) => track.stop());
+	cameraFeed.srcObject = null;
+	cameraStarted = false;
+	captureButton.disabled = true;
+	clearCanvas();
+	setLiveHint(null);
+	cameraLock.classList.remove("is-hidden");
+	cameraMessage.textContent = "Abrindo a câmera...";
+}
+
+cameraBack?.addEventListener("click", () => {
+	closeCameraView();
+	if (!showingResult) setHomeVisible(true);
+});
+
+helpButton?.addEventListener("click", () => {
+	cameraHelp.hidden = false;
+});
+cameraHelpClose?.addEventListener("click", () => {
+	cameraHelp.hidden = true;
+});
+cameraHelp?.addEventListener("click", (event) => {
+	if (event.target === cameraHelp) cameraHelp.hidden = true;
+});
+
+// Recado rápido na parte de baixo da tela (quando a câmera está fechada)
+let toastTimer;
+function showToast(message) {
+	if (!toast) return;
+	toast.textContent = message;
+	toast.hidden = false;
+	window.clearTimeout(toastTimer);
+	toastTimer = window.setTimeout(() => { toast.hidden = true; }, 5000);
+}
+
+// "Analisar fruta": abre a câmera. Sem fruta escolhida em cima, usa o modo automático.
+analyzeButton?.addEventListener("click", () => selectMode(selectedMode ?? "auto"));
+updateAnalyzeLabel();
+
+// "ou escolher uma foto da galeria"
+stepsGallery?.addEventListener("click", () => galleryInput.click());
 
 function closeMobileSidebars() {
 	leftSidebar?.classList.remove("mobile-open");
@@ -1311,6 +1416,7 @@ mobileOverlay?.addEventListener("click", closeMobileSidebars);
 document.addEventListener("keydown", (event) => {
 	if (event.key === "Escape") {
 		closeMobileSidebars();
+		if (!cameraCard.hidden) cameraBack?.click();
 	}
 });
 
@@ -1318,27 +1424,43 @@ document.addEventListener("keydown", (event) => {
 // Funcionar sem internet (app instalável)
 // O service worker (sw.js) guarda o site e o modelo no aparelho.
 // ---------------------------------------------------------------
-const offlineStatus = document.querySelector("#offline-status");
-const installButton = document.querySelector("#install-button");
+const offlinePill = document.querySelector("#offline-pill");
+const offlinePillStatus = document.querySelector("#offline-pill-status");
+const offlinePillHint = document.querySelector("#offline-pill-hint");
 let modeloGuardado = false;
+let installPrompt = null;
+const swDisponivel = "serviceWorker" in navigator && window.isSecureContext;
 
+// Estados do botão: pronto, preparando, sem internet agora, indisponível
 function updateOfflineStatus() {
-	if (!offlineStatus) return;
-	offlineStatus.classList.remove("is-ready", "is-offline");
-	if (!navigator.onLine) {
-		offlineStatus.textContent = modeloGuardado ? "Sem internet: usando a versão guardada" : "Sem internet";
-		offlineStatus.classList.add("is-offline");
-		offlineStatus.hidden = false;
+	if (!offlinePill) return;
+	let estado;
+	let titulo;
+	let dica;
+	if (!swDisponivel) {
+		estado = "is-off";
+		titulo = "Indisponível";
+		dica = "Este navegador não permite guardar o app";
+	} else if (!navigator.onLine) {
+		estado = "is-offline";
+		titulo = modeloGuardado ? "Funcionando sem internet" : "Sem internet";
+		dica = modeloGuardado ? "Usando a versão guardada no celular" : "Conecte uma vez para guardar o app";
 	} else if (modeloGuardado) {
-		offlineStatus.textContent = "Pronto para usar sem internet";
-		offlineStatus.classList.add("is-ready");
-		offlineStatus.hidden = false;
+		estado = "is-ready";
+		titulo = "Pronto";
+		dica = installPrompt ? "Toque para instalar no celular" : "Já pode usar sem internet";
 	} else {
-		offlineStatus.hidden = true;
+		estado = "is-preparing";
+		titulo = "Preparando...";
+		dica = "Deixe a internet ligada por alguns segundos";
 	}
+	offlinePill.className = `offline-pill ${estado}`;
+	offlinePillStatus.textContent = titulo;
+	offlinePillHint.textContent = dica;
+	offlinePill.setAttribute("aria-label", `Uso sem internet: ${titulo}. ${dica}`);
 }
 
-if ("serviceWorker" in navigator) {
+if (swDisponivel) {
 	window.addEventListener("load", async () => {
 		try {
 			await navigator.serviceWorker.register("./sw.js");
@@ -1360,22 +1482,279 @@ window.addEventListener("online", updateOfflineStatus);
 window.addEventListener("offline", updateOfflineStatus);
 updateOfflineStatus();
 
-// Botão "Instalar no celular" (aparece no Chrome/Android quando o site pode ser instalado)
-let installPrompt = null;
+// Chrome/Android avisa quando o site pode ser instalado
 window.addEventListener("beforeinstallprompt", (event) => {
 	event.preventDefault();
 	installPrompt = event;
-	if (installButton) installButton.hidden = false;
-});
-
-installButton?.addEventListener("click", async () => {
-	if (!installPrompt) return;
-	installPrompt.prompt();
-	await installPrompt.userChoice;
-	installPrompt = null;
-	installButton.hidden = true;
+	updateOfflineStatus();
 });
 
 window.addEventListener("appinstalled", () => {
-	if (installButton) installButton.hidden = true;
+	installPrompt = null;
+	updateOfflineStatus();
+	showToast("Fresh Food instalado! O ícone já está na tela inicial.");
+});
+
+offlinePill?.addEventListener("click", async () => {
+	if (installPrompt) {
+		installPrompt.prompt();
+		await installPrompt.userChoice;
+		installPrompt = null;
+		updateOfflineStatus();
+		return;
+	}
+	const mensagens = {
+		"is-ready": "Pronto! O Fresh Food já está guardado neste celular e funciona sem internet. Para ter o ícone na tela inicial, use \"Adicionar à tela inicial\" no menu do navegador.",
+		"is-preparing": "Estamos guardando o app e o modelo no celular. Deixe a internet ligada por alguns segundos.",
+		"is-offline": modeloGuardado ? "Você está sem internet, mas o Fresh Food continua funcionando com a versão guardada." : "Você está sem internet. Conecte uma vez para o app ser guardado no celular.",
+		"is-off": "Este navegador não permite guardar o app para uso sem internet. Tente pelo Chrome ou Safari.",
+	};
+	const estado = [...offlinePill.classList].find((c) => c.startsWith("is-"));
+	showToast(mensagens[estado]);
+});
+
+// ---------------------------------------------------------------
+// Histórico de análises (guardado só neste celular, no IndexedDB)
+// ---------------------------------------------------------------
+const HISTORICO_MAX = 12;
+const historySection = document.querySelector("#history");
+const historyList = document.querySelector("#history-list");
+const historyCount = document.querySelector("#history-count");
+const historyClear = document.querySelector("#history-clear");
+const resultHome = document.querySelector("#result-home");
+
+function abrirBanco() {
+	return new Promise((resolve, reject) => {
+		if (!("indexedDB" in window)) {
+			reject(new Error("IndexedDB indisponível"));
+			return;
+		}
+		const pedido = indexedDB.open("fresh-food", 1);
+		pedido.onupgradeneeded = () => {
+			pedido.result.createObjectStore("historico", { keyPath: "id" });
+		};
+		pedido.onsuccess = () => resolve(pedido.result);
+		pedido.onerror = () => reject(pedido.error);
+	});
+}
+
+async function banco(modo, acao) {
+	const db = await abrirBanco();
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction("historico", modo);
+		const store = tx.objectStore("historico");
+		const pedido = acao(store);
+		tx.oncomplete = () => resolve(pedido?.result);
+		tx.onerror = () => reject(tx.error);
+		tx.onabort = () => reject(tx.error);
+	});
+}
+
+const lerHistorico = async () => ((await banco("readonly", (st) => st.getAll())) ?? []).sort((a, b) => b.id - a.id);
+const apagarItem = (id) => banco("readwrite", (st) => st.delete(id));
+const guardarItem = (item) => banco("readwrite", (st) => st.put(item));
+const limparHistorico = () => banco("readwrite", (st) => st.clear());
+
+function canvasParaBlob(canvas, tipo, qualidade) {
+	return new Promise((resolve) => canvas.toBlob(resolve, tipo, qualidade));
+}
+
+// Miniatura quadrada da fruta, sem distorcer
+function criarMiniatura(bbox) {
+	const [x, y, w, h] = bbox;
+	const lado = Math.max(w, h) * 1.1;
+	const cx = x + w / 2;
+	const cy = y + h / 2;
+	const mini = document.createElement("canvas");
+	mini.width = 200;
+	mini.height = 200;
+	const ctx = mini.getContext("2d");
+	ctx.fillStyle = "#ffffff";
+	ctx.fillRect(0, 0, 200, 200);
+	ctx.imageSmoothingQuality = "high";
+	ctx.drawImage(photoCanvas, cx - lado / 2, cy - lado / 2, lado, lado, 0, 0, 200, 200);
+	return canvasParaBlob(mini, "image/jpeg", 0.8);
+}
+
+async function saveToHistory({ fruitKey, freshness, detectionConfidence, warnings, bbox, card }) {
+	// Cartão em tamanho menor (para caber mais no celular)
+	const menor = document.createElement("canvas");
+	const escala = Math.min(1, 720 / card.width);
+	menor.width = Math.round(card.width * escala);
+	menor.height = Math.round(card.height * escala);
+	menor.getContext("2d").drawImage(card, 0, 0, menor.width, menor.height);
+
+	const recorte = document.createElement("canvas");
+	recorte.width = LADO_ANALISE;
+	recorte.height = LADO_ANALISE;
+	recorte.getContext("2d").putImageData(freshness.crop, 0, 0);
+
+	const item = {
+		id: Date.now(),
+		fruitKey,
+		stateKey: freshness.state.className,
+		percent: freshness.percent,
+		avg: freshness.avg,
+		chance: freshness.chance,
+		features: freshness.features,
+		sharpness: freshness.sharpness,
+		outlier: freshness.outlier,
+		outlierLimit: freshness.outlierLimit,
+		timing: freshness.timing,
+		detectionConfidence,
+		warnings,
+		thumb: await criarMiniatura(bbox),
+		card: await canvasParaBlob(menor, "image/jpeg", 0.82),
+		crop: await canvasParaBlob(recorte, "image/png"),
+	};
+
+	let itens = await lerHistorico();
+	const estavaCheio = itens.length >= HISTORICO_MAX;
+	// Abre espaço apagando as mais antigas
+	while (itens.length >= HISTORICO_MAX) {
+		await apagarItem(itens.pop().id);
+	}
+
+	// Se o navegador ficar sem espaço, apaga a mais antiga e tenta de novo
+	let guardou = false;
+	let apagouPorEspaco = false;
+	for (let tentativa = 0; tentativa < 4 && !guardou; tentativa++) {
+		try {
+			await guardarItem(item);
+			guardou = true;
+		} catch (error) {
+			if (error?.name !== "QuotaExceededError" || !itens.length) throw error;
+			await apagarItem(itens.pop().id);
+			apagouPorEspaco = true;
+		}
+	}
+
+	if (!guardou) {
+		showToast("Não deu para guardar esta análise: o navegador está sem espaço. Toque em Limpar no histórico.");
+	} else if (apagouPorEspaco) {
+		showToast("O espaço do navegador acabou. Apagamos as análises mais antigas para guardar esta.");
+	} else if (estavaCheio) {
+		showToast(`Histórico cheio: guardamos só as últimas ${HISTORICO_MAX} análises. A mais antiga foi apagada.`);
+	} else if (itens.length + 1 === HISTORICO_MAX) {
+		showToast(`Seu histórico chegou a ${HISTORICO_MAX} análises, o limite. Nas próximas, a mais antiga será apagada.`);
+	} else if (navigator.storage?.estimate) {
+		const { usage = 0, quota = 0 } = await navigator.storage.estimate();
+		if (quota && usage / quota > 0.9) {
+			showToast("O espaço do navegador está quase cheio. Toque em Limpar no histórico para liberar espaço.");
+		}
+	}
+
+	await renderHistory();
+}
+
+const VEREDITO_CURTO = { fresco: "Pode consumir", moderado: "Consuma logo", passado: "Não consumir" };
+let historyUrls = [];
+
+async function renderHistory() {
+	if (!historySection) return;
+	let itens = [];
+	try {
+		itens = await lerHistorico();
+	} catch (error) {
+		historySection.hidden = true;
+		return;
+	}
+
+	historyUrls.forEach((url) => URL.revokeObjectURL(url));
+	historyUrls = [];
+	historyList.innerHTML = "";
+
+	itens.forEach((item) => {
+		const url = URL.createObjectURL(item.thumb);
+		historyUrls.push(url);
+		const data = new Date(item.id).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+		const botao = document.createElement("button");
+		botao.type = "button";
+		botao.className = "history-item";
+		botao.setAttribute("role", "listitem");
+		botao.innerHTML = `
+			<img src="${url}" alt="">
+			<span class="history-info">
+				<span class="history-date">${data}</span>
+				<strong>${fruitNames[item.fruitKey]}</strong>
+				<span class="history-badge ${item.stateKey}">${VEREDITO_CURTO[item.stateKey]}</span>
+			</span>`;
+		botao.addEventListener("click", () => openHistoryItem(item));
+		historyList.appendChild(botao);
+	});
+
+	historyCount.textContent = `${itens.length} de ${HISTORICO_MAX}`;
+	historyCount.classList.toggle("is-full", itens.length >= HISTORICO_MAX);
+	if (telaComputador.matches) homeVisible = true;
+	historySection.hidden = itens.length === 0 || !homeVisible;
+}
+
+// Abre de novo o resultado completo de uma análise antiga
+async function openHistoryItem(item) {
+	const bitmap = await createImageBitmap(item.crop);
+	const recorte = document.createElement("canvas");
+	recorte.width = LADO_ANALISE;
+	recorte.height = LADO_ANALISE;
+	const ctx = recorte.getContext("2d", { willReadFrequently: true });
+	ctx.drawImage(bitmap, 0, 0);
+	const crop = ctx.getImageData(0, 0, LADO_ANALISE, LADO_ANALISE);
+	const medido = measureFruit(crop, item.fruitKey);
+
+	const freshness = {
+		key: item.stateKey,
+		state: statusStates[item.stateKey],
+		percent: item.percent,
+		avg: item.avg,
+		chance: item.chance,
+		features: item.features,
+		fruitKey: item.fruitKey,
+		crop,
+		categoryMap: medido.categoryMap,
+		counts: medido.counts,
+		sharpness: item.sharpness,
+		outlier: item.outlier,
+		outlierLimit: item.outlierLimit,
+		timing: item.timing,
+	};
+
+	renderFruitState(item.fruitKey, freshness, item.detectionConfidence);
+	showWarnings(item.warnings ?? []);
+	presentCardBlob(item.card, item.fruitKey);
+	const data = new Date(item.id).toISOString().slice(0, 10);
+	lastCardName = `fresh-food-${fruitNames[item.fruitKey].toLowerCase().replace("ç", "c").replace("ã", "a")}-${data}.jpg`;
+}
+
+historyClear?.addEventListener("click", async () => {
+	if (!window.confirm("Apagar todas as análises do histórico?")) return;
+	await limparHistorico();
+	await renderHistory();
+	showToast("Histórico apagado.");
+});
+
+// Tela inicial (cartão dos 3 passos + histórico).
+// No computador ela fica sempre à esquerda e o resultado aparece à direita.
+const telaComputador = window.matchMedia("(min-width: 1101px)");
+
+let homeVisible = true;
+function setHomeVisible(visivel) {
+	if (telaComputador.matches) visivel = true;
+	homeVisible = visivel;
+	if (stepsCard) stepsCard.hidden = !visivel;
+	if (offlinePill) offlinePill.hidden = !visivel;
+	if (historySection) historySection.hidden = !visivel || !historyList.children.length;
+}
+
+resultHome?.addEventListener("click", () => {
+	showingResult = false;
+	hideResults();
+	setHomeVisible(true);
+	window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+renderHistory();
+
+// Se a pessoa redimensionar a janela para o tamanho de computador, mostra a tela inicial
+telaComputador.addEventListener?.("change", () => {
+	if (telaComputador.matches) setHomeVisible(true);
+	else if (showingResult) setHomeVisible(false);
 });
