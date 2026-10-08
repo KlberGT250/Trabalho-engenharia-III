@@ -874,10 +874,15 @@ function fillExplain(freshness) {
 	explainPanel.hidden = false;
 }
 
+// percent = null quando a pessoa escolheu a fruta no botão e o detector não confirmou.
+// Antes aparecia "0%", que parecia que o site não tinha certeza nenhuma da fruta.
 function setConfidence(percent) {
-	confidenceValue.textContent = `${percent}%`;
-	confidenceBar.style.width = `${percent}%`;
-	confidenceTrack.setAttribute("aria-valuenow", percent);
+	const escolhida = percent === null;
+	confidenceValue.textContent = escolhida ? "Escolhida no botão" : `${percent}%`;
+	confidenceValue.classList.toggle("is-text", escolhida);
+	confidenceTrack.hidden = escolhida;
+	confidenceBar.style.width = `${escolhida ? 0 : percent}%`;
+	confidenceTrack.setAttribute("aria-valuenow", escolhida ? 0 : percent);
 }
 
 // Coloca o marcador na régua (0 a 40% fresco, 40 a 70% moderado, 70 a 100% passado)
@@ -912,7 +917,7 @@ function renderFruitState(fruitKey, freshness, detectionConfidence) {
 	freshnessReason.textContent = buildReason(freshness);
 	// Uma régua só, com o mesmo número do topo (antes eram 3 barras com outros números)
 	setScaleMarker(resultScaleMarker, chanceMostrada(freshness.chance));
-	setConfidence(detectionConfidence ?? 0);
+	setConfidence(detectionConfidence ?? null);
 	fillExplain(freshness);
 }
 

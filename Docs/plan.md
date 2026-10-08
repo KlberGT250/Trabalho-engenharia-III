@@ -228,7 +228,7 @@ Uma coluna, nesta ordem:
 
 - `sw.js` (service worker) guarda o site, as bibliotecas (`Js/vendor/tf.min.js` e `Js/vendor/coco-ssd.min.js`), as imagens e o modelo COCO-SSD.
 - `manifest.webmanifest` permite instalar o app, com os ícones de `IMG/icones/`.
-- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v21`). Sem isso, quem já abriu o site continua vendo a versão antiga.
+- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v22`). Sem isso, quem já abriu o site continua vendo a versão antiga.
 
 ---
 
@@ -364,3 +364,8 @@ Pensado para o uso no supermercado, onde a fruta pode estar na banca, encostada 
 - Só contam frutas com pelo menos 40% de certeza do detector e com pelo menos 10% delas dentro da caixa analisada. Uma fruta longe não mistura o resultado, então não gera aviso.
 - A mesma fruta detectada duas vezes (caixas quase iguais) não conta como duas.
 - Limite: um cacho de bananas costuma ser detectado como uma banana só, então nesse caso o aviso não aparece.
+
+## 17. Certeza quando a fruta é escolhida no botão (v22)
+
+- Problema: quando a pessoa escolhia a fruta no botão e o detector não confirmava aquela fruta, a tela mostrava "Certeza de que é a fruta: 0%". Parecia que o site não tinha certeza nenhuma, mas na verdade a fruta foi informada pela pessoa.
+- Agora aparece "Escolhida no botão" no lugar do número, e a barra some. O cartão para baixar já mostrava "Fruta escolhida no botão".

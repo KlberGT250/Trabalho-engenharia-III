@@ -5,7 +5,7 @@
 // Sempre que mudar algum arquivo do site, aumente o número da VERSAO.
 // Assim o celular baixa a versão nova e apaga a antiga.
 // ---------------------------------------------------------------
-const VERSAO = "fresh-food-v21";
+const VERSAO = "fresh-food-v22";
 const CACHE_SITE = `${VERSAO}-site`;
 const CACHE_MODELO = "fresh-food-modelo"; // o modelo não muda, então não depende da versão
 const CACHE_FONTES = "fresh-food-fontes";
