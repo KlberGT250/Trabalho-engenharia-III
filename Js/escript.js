@@ -173,26 +173,26 @@ const CORES_VIVAS = {
 	apple: { hue: [[0, 15], [345, 360], [70, 130]], satMin: 0.35, valMin: 0.35 },
 };
 
-// Números do classificador (gerados por Docs/treino/treinar.py)
+// Números do classificador (gerados por Docs/treino/treinar.py, versão 2: com o fundo separado)
 // Ordem: corViva, marrom, mofo, escuro, apagado, saturacao, brilho, textura
 const MODELO = {
 	banana: {
-		media: [0.503528, 0.15682, 0.170481, 0.034416, 0.134755, 0.441454, 0.724046, 0.052189],
-		desvio: [0.38716, 0.227486, 0.189464, 0.070657, 0.146604, 0.14923, 0.216871, 0.031951],
-		pesos: [-1.1291, 1.1165, 0.6038, 0.2808, 0.3335, -0.1931, -1.1012, 0.854],
-		base: -0.6002,
+		media: [0.437746, 0.208528, 0.163626, 0.041358, 0.148742, 0.436198, 0.672188, 0.056682],
+		desvio: [0.391097, 0.244778, 0.175835, 0.07746, 0.154735, 0.147461, 0.22767, 0.03263],
+		pesos: [-2.1624, 2.4826, 1.1083, 0.032, 0.2628, -0.09, -1.8772, 2.1762],
+		base: 2.0155,
 	},
 	apple: {
-		media: [0.425647, 0.067909, 0.056719, 0.004806, 0.444919, 0.559031, 0.731727, 0.038491],
-		desvio: [0.335319, 0.10498, 0.053459, 0.024619, 0.313567, 0.089281, 0.103427, 0.015167],
-		pesos: [-1.4271, 3.1222, -0.1261, -0.2484, 0.5218, -0.0942, 1.9114, 2.9038],
-		base: 1.2851,
+		media: [0.430518, 0.068665, 0.04997, 0.004744, 0.446103, 0.563388, 0.730597, 0.036467],
+		desvio: [0.337744, 0.106234, 0.047838, 0.024631, 0.317424, 0.089288, 0.104287, 0.014694],
+		pesos: [-1.3971, 2.888, -0.2192, -0.2503, 0.5724, 0.0164, 1.6987, 2.9436],
+		base: 1.19,
 	},
 	orange: {
-		media: [0.642553, 0.017715, 0.117003, 0.003202, 0.219527, 0.599116, 0.852287, 0.027237],
-		desvio: [0.279602, 0.047545, 0.169605, 0.008914, 0.188098, 0.1382, 0.090561, 0.015025],
-		pesos: [-0.7512, 2.0641, 0.8453, 0.0658, -0.1704, -2.2292, 1.3734, 0.8003],
-		base: -0.6181,
+		media: [0.613575, 0.025955, 0.132276, 0.003792, 0.224402, 0.577966, 0.830737, 0.030087],
+		desvio: [0.287084, 0.058406, 0.173252, 0.010181, 0.190034, 0.147593, 0.106795, 0.018219],
+		pesos: [-0.5629, 0.747, 1.254, -0.1576, -0.5141, -1.2574, -0.2005, 0.941],
+		base: 1.0561,
 	},
 };
 
@@ -202,45 +202,56 @@ const MODELO = {
 // O limite deixa passar 97,5% das fotos normais. Gerado por Docs/treino/avaliar_metricas.py
 const ANOMALIA = {
 	banana: {
-		limite: 4.204,
+		limite: 4.247,
 		inversa: [
-			[12.8369, 5.40255, 4.43906, 1.13844, 4.24819, -1.50612, -2.10909, 0.24362],
-			[5.40255, 6.10123, 3.23399, 1.89363, 2.20732, -0.11008, 3.20064, -0.05404],
-			[4.43906, 3.23399, 4.91336, 1.50361, 2.03147, 2.70798, 0.26276, -0.16573],
-			[1.13844, 1.89363, 1.50361, 2.30206, 0.64167, 1.15451, 1.79421, -0.01501],
-			[4.24819, 2.20732, 2.03147, 0.64167, 2.42141, 0.09215, -0.60095, -0.3381],
-			[-1.50612, -0.11008, 2.70798, 1.15451, 0.09215, 5.29137, -0.7217, -0.29921],
-			[-2.10909, 3.20064, 0.26276, 1.79421, -0.60095, -0.7217, 7.82848, 1.22659],
-			[0.24362, -0.05404, -0.16573, -0.01501, -0.3381, -0.29921, 1.22659, 1.78446],
+			[12.79674, 5.60374, 3.86544, 1.13469, 4.38121, -1.44667, -2.37672, 0.37764],
+			[5.60374, 6.57835, 3.16758, 2.1691, 2.38297, -0.01949, 3.25971, -0.09361],
+			[3.86544, 3.16758, 4.64513, 1.59445, 1.86966, 2.61488, 0.47809, -0.29695],
+			[1.13469, 2.1691, 1.59445, 2.46776, 0.66542, 1.25332, 2.11181, 0.02819],
+			[4.38121, 2.38297, 1.86966, 0.66542, 2.699, 0.08847, -0.74983, -0.48307],
+			[-1.44667, -0.01949, 2.61488, 1.25332, 0.08847, 4.90991, -0.49941, -0.48818],
+			[-2.37672, 3.25971, 0.47809, 2.11181, -0.74983, -0.49941, 8.21959, 1.42687],
+			[0.37764, -0.09361, -0.29695, 0.02819, -0.48307, -0.48818, 1.42687, 2.31662],
 		],
 	},
 	apple: {
-		limite: 5.345,
+		limite: 5.458,
 		inversa: [
-			[10.2946, 3.14416, 1.43896, 0.74053, 9.0226, -0.22601, 0.24015, 0.15011],
-			[3.14416, 2.71262, 0.39901, 0.21418, 2.34058, 0.10562, 1.1628, -0.22031],
-			[1.43896, 0.39901, 1.89238, 0.14409, 1.40343, 1.00902, 0.2825, -0.05439],
-			[0.74053, 0.21418, 0.14409, 1.24299, 0.5845, 0.37151, 0.33576, -0.06959],
-			[9.0226, 2.34058, 1.40343, 0.5845, 9.28274, 0.00514, -0.72063, -0.07203],
-			[-0.22601, 0.10562, 1.00902, 0.37151, 0.00514, 1.76967, 0.16958, -0.13096],
-			[0.24015, 1.1628, 0.2825, 0.33576, -0.72063, 0.16958, 2.31266, 0.38764],
-			[0.15011, -0.22031, -0.05439, -0.06959, -0.07203, -0.13096, 0.38764, 1.23277],
+			[10.2806, 3.15279, 1.22637, 0.74255, 9.04399, -0.24203, 0.23604, 0.16398],
+			[3.15279, 2.73284, 0.41614, 0.21737, 2.34469, 0.11336, 1.21911, -0.21265],
+			[1.22637, 0.41614, 1.98769, 0.08604, 1.26375, 1.12282, 0.34866, -0.19231],
+			[0.74255, 0.21737, 0.08604, 1.24191, 0.57976, 0.35316, 0.33186, -0.05608],
+			[9.04399, 2.34469, 1.26375, 0.57976, 9.35691, 0.02296, -0.73745, -0.06998],
+			[-0.24203, 0.11336, 1.12282, 0.35316, 0.02296, 1.84605, 0.22287, -0.17337],
+			[0.23604, 1.21911, 0.34866, 0.33186, -0.73745, 0.22287, 2.36007, 0.33576],
+			[0.16398, -0.21265, -0.19231, -0.05608, -0.06998, -0.17337, 0.33576, 1.2329],
 		],
 	},
 	orange: {
-		limite: 5.705,
+		limite: 5.879,
 		inversa: [
-			[11.864, 1.66731, 5.05799, 0.09759, 7.10715, -1.91154, -0.48144, 0.08988],
-			[1.66731, 1.47798, 1.06859, 0.0787, 1.2361, -0.27897, 0.66, -0.45219],
-			[5.05799, 1.06859, 7.0386, 0.54229, 3.87274, 3.54924, 0.54546, 0.14734],
-			[0.09759, 0.0787, 0.54229, 1.12123, 0.24074, 0.30634, 0.65038, 0.05587],
-			[7.10715, 1.2361, 3.87274, 0.24074, 5.61959, -0.30284, 0.02616, -0.15481],
-			[-1.91154, -0.27897, 3.54924, 0.30634, -0.30284, 5.44548, 0.04594, 0.40113],
-			[-0.48144, 0.66, 0.54546, 0.65038, 0.02616, 0.04594, 2.64413, 0.76797],
-			[0.08988, -0.45219, 0.14734, 0.05587, -0.15481, 0.40113, 0.76797, 1.60474],
+			[11.82392, 1.93558, 5.21144, 0.12709, 6.99868, -1.69383, -0.52663, 0.13462],
+			[1.93558, 2.21301, 1.20811, 0.11243, 1.43521, -0.46463, 0.93956, -0.70967],
+			[5.21144, 1.20811, 6.65025, 0.57368, 3.89588, 3.07835, 0.52283, 0.22345],
+			[0.12709, 0.11243, 0.57368, 1.22105, 0.2565, 0.35783, 0.69663, 0.08378],
+			[6.99868, 1.43521, 3.89588, 0.2565, 5.42044, -0.12401, -0.00717, -0.19347],
+			[-1.69383, -0.46463, 3.07835, 0.35783, -0.12401, 5.19693, -0.01252, 0.67902],
+			[-0.52663, 0.93956, 0.52283, 0.69663, -0.00717, -0.01252, 3.04264, 0.93211],
+			[0.13462, -0.70967, 0.22345, 0.08378, -0.19347, 0.67902, 0.93211, 2.41311],
 		],
 	},
 };
+
+// Maçã ou laranja pela cor (Docs/treino/treinar_cor.py). Não troca a fruta sozinho:
+// só avisa quando a cor discorda do detector com 90% ou mais (aviso indevido em 3% das fotos).
+// Medidas: 12 faixas de matiz (30 graus cada), parte sem cor, saturação média, brilho médio.
+const COR_FRUTA = {
+	media: [0.512689, 0.242708, 0.084836, 0.005743, 0.000262, 0.000575, 0.000896, 0.000731, 4.6e-05, 3.3e-05, 0.000171, 0.054719, 0.096593, 0.570353, 0.778445],
+	desvio: [0.306384, 0.269078, 0.235835, 0.021685, 0.00235, 0.005962, 0.007577, 0.007554, 0.000361, 0.000212, 0.001141, 0.157468, 0.137015, 0.120933, 0.116751],
+	pesos: [0.2084, 0.0561, -0.3544, 0.1795, 0.5945, 0.1483, 0.8816, -0.2928, 0.3438, -0.596, -0.369, -3.312, 3.7656, 1.7072, 1.3533],
+	base: -0.6416,
+};
+const COR_FRUTA_AVISO = 0.9;
 
 // Nitidez mínima (variância do Laplaciano numa versão 256x256 da fruta).
 // Calibrado no dataset: marca 2,6% das fotos nítidas e 57% das fotos levemente borradas.
@@ -248,7 +259,7 @@ const LADO_NITIDEZ = 256;
 const LIMITE_NITIDEZ = 12;
 
 // Textura a partir da qual a casca é considerada irregular (meio-termo entre fresca e estragada)
-const TEXTURA_IRREGULAR = { banana: 0.058, apple: 0.037, orange: 0.031 };
+const TEXTURA_IRREGULAR = { banana: 0.055, apple: 0.036, orange: 0.030 };
 
 // Chance de estar estragada: abaixo de 40% = Fresco, acima de 70% = Passado
 const CENTROS_ESTADO = { fresco: 0.25, moderado: 0.55, passado: 0.85 };
@@ -301,11 +312,7 @@ const explainFactors = document.querySelector("#explain-factors");
 const scaleMarker = document.querySelector("#scale-marker");
 const explainChecks = document.querySelector("#explain-checks");
 const resultWarnings = document.querySelector("#result-warnings");
-const classBars = {
-	fresco: [document.querySelector("#bar-fresco"), document.querySelector("#pct-fresco")],
-	moderado: [document.querySelector("#bar-moderado"), document.querySelector("#pct-moderado")],
-	passado: [document.querySelector("#bar-passado"), document.querySelector("#pct-passado")],
-};
+const resultScaleMarker = document.querySelector("#result-scale-marker");
 
 // Canvas escondido que guarda a foto analisada (da câmera ou da galeria)
 const photoCanvas = document.createElement("canvas");
@@ -378,7 +385,112 @@ function shrinkRegion(bbox) {
 	return analysisContext.getImageData(0, 0, LADO_ANALISE, LADO_ANALISE);
 }
 
-// Mede as 8 características da casca dentro da área oval
+// ---------------------------------------------------------------
+// Separar o fundo (versão 2 do modelo)
+// A caixa do detector é um retângulo, então os cantos quase sempre são fundo.
+// 1) Pega as cores dos cantos e resume em até 3 cores (k-means).
+// 2) Marca como fundo os pontos parecidos com essas cores LIGADOS à borda.
+//    Uma mancha escura no meio da fruta não está ligada à borda, então continua contando.
+// Mesma conta de Docs/treino/caracteristicas.py.
+// ---------------------------------------------------------------
+const K_FUNDO = 3;
+const LIMITE_COR_FUNDO = 0.13; // distância de cor (RGB de 0 a 1)
+const FUNDO_MAX = 0.6; // se o fundo cobrir mais de 60% do oval, algo deu errado: não remove nada
+
+function separarFundo(data) {
+	const N = LADO_ANALISE;
+	const c = (N - 1) / 2;
+	const fundo = new Uint8Array(N * N);
+
+	// Pontos dos cantos (fora do círculo que cabe na caixa), um sim e um não
+	const cantos = [];
+	let alterna = 0;
+	for (let y = 0; y < N; y++) {
+		for (let x = 0; x < N; x++) {
+			if ((x - c) ** 2 + (y - c) ** 2 <= (N / 2) ** 2) continue;
+			if (alterna++ % 2) continue;
+			const i = (y * N + x) * 4;
+			cantos.push([data[i] / 255, data[i + 1] / 255, data[i + 2] / 255]);
+		}
+	}
+
+	// k-means com começo fixo (pontos em ordem de brilho), igual ao Python
+	const ordem = cantos.map((p, i) => [p[0] + p[1] + p[2], i]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+	const centros = [];
+	for (let j = 0; j < K_FUNDO; j++) centros.push([...cantos[ordem[Math.floor(((j + 0.5) / K_FUNDO) * cantos.length)][1]]]);
+	const rotulo = new Uint8Array(cantos.length);
+	const dist2 = (p, q) => (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2;
+	const rotular = () => {
+		cantos.forEach((p, i) => {
+			let melhor = 0;
+			for (let j = 1; j < K_FUNDO; j++) if (dist2(p, centros[j]) < dist2(p, centros[melhor])) melhor = j;
+			rotulo[i] = melhor;
+		});
+	};
+	for (let it = 0; it < 8; it++) {
+		rotular();
+		const soma = centros.map(() => [0, 0, 0, 0]);
+		cantos.forEach((p, i) => {
+			const s = soma[rotulo[i]];
+			s[0] += p[0]; s[1] += p[1]; s[2] += p[2]; s[3]++;
+		});
+		soma.forEach((s, j) => {
+			if (s[3]) centros[j] = [s[0] / s[3], s[1] / s[3], s[2] / s[3]];
+		});
+	}
+	rotular();
+	const tamanho = new Array(K_FUNDO).fill(0);
+	rotulo.forEach((r) => tamanho[r]++);
+	// Cores que quase não aparecem nos cantos (menos de 10%) não contam
+	const cores = centros.filter((_, j) => tamanho[j] >= 0.1 * cantos.length);
+	if (!cores.length) return fundo;
+
+	// Pontos parecidos com alguma cor do fundo
+	const limite2 = LIMITE_COR_FUNDO ** 2;
+	const parecido = new Uint8Array(N * N);
+	for (let i = 0; i < N * N; i++) {
+		const p = [data[i * 4] / 255, data[i * 4 + 1] / 255, data[i * 4 + 2] / 255];
+		if (cores.some((q) => dist2(p, q) < limite2)) parecido[i] = 1;
+	}
+
+	// Espalha a partir dos pontos parecidos que ficam fora do oval (vizinhos de 4 lados)
+	const fila = [];
+	const rOval = (N / 2) * OVAL;
+	for (let y = 0; y < N; y++) {
+		for (let x = 0; x < N; x++) {
+			const i = y * N + x;
+			if (parecido[i] && (x - c) ** 2 + (y - c) ** 2 > rOval * rOval) {
+				fundo[i] = 1;
+				fila.push(i);
+			}
+		}
+	}
+	while (fila.length) {
+		const i = fila.pop();
+		const x = i % N;
+		const vizinhos = [x > 0 ? i - 1 : -1, x < N - 1 ? i + 1 : -1, i - N, i + N];
+		for (const j of vizinhos) {
+			if (j < 0 || j >= N * N || fundo[j] || !parecido[j]) continue;
+			fundo[j] = 1;
+			fila.push(j);
+		}
+	}
+
+	// Se o "fundo" cobrir a maior parte do oval, é melhor não remover nada
+	let noOval = 0;
+	let oval = 0;
+	for (let y = 0; y < N; y++) {
+		for (let x = 0; x < N; x++) {
+			if ((x - c) ** 2 + (y - c) ** 2 > rOval * rOval) continue;
+			oval++;
+			if (fundo[y * N + x]) noOval++;
+		}
+	}
+	if (noOval > FUNDO_MAX * oval) fundo.fill(0);
+	return fundo;
+}
+
+// Mede as 8 características da casca dentro da área oval (sem o fundo)
 // e devolve também uma máscara com os defeitos (para desenhar na foto)
 function measureFruit(imageData, fruitKey) {
 	const cor = CORES_VIVAS[fruitKey];
@@ -394,55 +506,69 @@ function measureFruit(imageData, fruitKey) {
 		val[i] = v;
 	}
 
-	const mask = new ImageData(N, N);
-	// Mapa de categorias: 255 = ponto fora da conta (fundo, reflexo ou fora do oval)
-	const categoryMap = new Uint8Array(N * N).fill(255);
+	const fundo = separarFundo(data);
 	const c = (N - 1) / 2;
 	const r = (N / 2) * OVAL;
-	const count = { viva: 0, marrom: 0, mofo: 0, escuro: 0, apagado: 0 };
-	let n = 0;
-	let satSum = 0;
-	let valSum = 0;
-	let texSum = 0;
 	let rawValSum = 0;
 	let rawCount = 0;
 
+	// Pontos que entram na conta: dentro do oval, sem fundo, sem branco de reflexo e sem preto
+	const conta = new Uint8Array(N * N);
 	for (let y = 0; y < N; y++) {
 		for (let x = 0; x < N; x++) {
 			if ((x - c) ** 2 + (y - c) ** 2 > r * r) continue;
 			const i = y * N + x;
-			const h = hue[i];
-			const s = sat[i];
-			const v = val[i];
-			rawValSum += v;
+			rawValSum += val[i];
 			rawCount++;
+			if (fundo[i]) continue;
+			if ((val[i] > 0.93 && sat[i] < 0.08) || val[i] < 0.06) continue;
+			conta[i] = 1;
+		}
+	}
 
-			// Fundo branco ou reflexo de luz, e pixels quase pretos: fora da conta
-			if ((v > 0.93 && s < 0.08) || v < 0.06) continue;
-			n++;
-			satSum += s;
-			valSum += v;
-			// Textura: diferença de brilho para o vizinho da direita e o de baixo
-			if (x < N - 1) texSum += Math.abs(val[i + 1] - v);
-			if (y < N - 1) texSum += Math.abs(val[i + N] - v);
+	const mask = new ImageData(N, N);
+	// Mapa de categorias: 255 = ponto fora da conta (fundo, reflexo ou fora do oval)
+	const categoryMap = new Uint8Array(N * N).fill(255);
+	const count = { viva: 0, marrom: 0, mofo: 0, escuro: 0, apagado: 0 };
+	const faixasCor = new Array(12).fill(0);
+	let semCor = 0;
+	let n = 0;
+	let satSum = 0;
+	let valSum = 0;
+	let texSum = 0;
 
-			const isViva = inHueRanges(h, cor.hue) && s > cor.satMin && v > cor.valMin;
-			let categoria;
-			if (isViva) categoria = "viva";
-			else if (inHueRanges(h, [[0, 50], [340, 360]]) && s >= 0.2 && v < 0.55) categoria = "marrom";
-			else if (s < 0.2 && v >= 0.3) categoria = "mofo";
-			else if (v < 0.25) categoria = "escuro";
-			else categoria = "apagado";
-			count[categoria]++;
-			categoryMap[i] = CATEGORIA_INDICE[categoria];
-			const defeito = categoria === "marrom" || categoria === "mofo" || categoria === "escuro";
+	for (let i = 0; i < N * N; i++) {
+		if (!conta[i]) continue;
+		const x = i % N;
+		const h = hue[i];
+		const s = sat[i];
+		const v = val[i];
+		n++;
+		satSum += s;
+		valSum += v;
+		// Textura: diferença de brilho para o vizinho da direita e o de baixo (só pontos da fruta)
+		if (x < N - 1 && conta[i + 1]) texSum += Math.abs(val[i + 1] - v);
+		if (i + N < N * N && conta[i + N]) texSum += Math.abs(val[i + N] - v);
+		// Cor para o teste "maçã ou laranja"
+		if (s >= 0.2 && v >= 0.2) faixasCor[Math.min(11, Math.floor(h / 30))]++;
+		else semCor++;
 
-			if (defeito) {
-				mask.data[i * 4] = SPOT_COLOR[0];
-				mask.data[i * 4 + 1] = SPOT_COLOR[1];
-				mask.data[i * 4 + 2] = SPOT_COLOR[2];
-				mask.data[i * 4 + 3] = SPOT_COLOR[3];
-			}
+		const isViva = inHueRanges(h, cor.hue) && s > cor.satMin && v > cor.valMin;
+		let categoria;
+		if (isViva) categoria = "viva";
+		else if (inHueRanges(h, [[0, 50], [340, 360]]) && s >= 0.2 && v < 0.55) categoria = "marrom";
+		else if (s < 0.2 && v >= 0.3) categoria = "mofo";
+		else if (v < 0.25) categoria = "escuro";
+		else categoria = "apagado";
+		count[categoria]++;
+		categoryMap[i] = CATEGORIA_INDICE[categoria];
+		const defeito = categoria === "marrom" || categoria === "mofo" || categoria === "escuro";
+
+		if (defeito) {
+			mask.data[i * 4] = SPOT_COLOR[0];
+			mask.data[i * 4 + 1] = SPOT_COLOR[1];
+			mask.data[i * 4 + 2] = SPOT_COLOR[2];
+			mask.data[i * 4 + 3] = SPOT_COLOR[3];
 		}
 	}
 
@@ -458,11 +584,21 @@ function measureFruit(imageData, fruitKey) {
 			n ? valSum / n : 0,
 			n ? texSum / n : 0,
 		],
+		corFruta: [...faixasCor.map((q) => q / total), semCor / total, n ? satSum / n : 0, n ? valSum / n : 0],
 		brightness: rawCount ? rawValSum / rawCount : 0,
 		mask,
 		categoryMap,
 		counts: count,
 	};
+}
+
+// Chance (0 a 1) de a fruta ser laranja, só pela cor da casca
+function chanceLaranjaPelaCor(medidas) {
+	let z = COR_FRUTA.base;
+	medidas.forEach((f, k) => {
+		z += COR_FRUTA.pesos[k] * ((f - COR_FRUTA.media[k]) / COR_FRUTA.desvio[k]);
+	});
+	return 1 / (1 + Math.exp(-z));
 }
 
 // Regressão logística: transforma as medidas na chance (0 a 1) de estar estragada
@@ -559,6 +695,7 @@ function analyzeFruit(fruitKey, bbox) {
 	freshness.outlierLimit = ANOMALIA[fruitKey].limite;
 	freshness.categoryMap = measured.categoryMap;
 	freshness.counts = measured.counts;
+	freshness.corFruta = measured.corFruta;
 	return { freshness, mask: measured.mask };
 }
 
@@ -570,7 +707,7 @@ function buildReason(freshness) {
 	partes.push(`${pct(marrom + escuro)}% com manchas escuras`);
 	partes.push(`${pct(mofo)}% acinzentada ou esbranquiçada`);
 	const casca = textura > TEXTURA_IRREGULAR[freshness.fruitKey] ? "casca irregular" : "casca lisa";
-	return `${partes.join(", ")} e ${casca}. Chance de estar estragada: ${chanceMostrada(freshness.chance)}%.`;
+	return `${partes.join(", ")} e ${casca}.`;
 }
 
 function sharpnessMessage(sharpness) {
@@ -714,10 +851,7 @@ function fillExplain(freshness) {
 
 	// Régua com a chance de estar estragada
 	const chance = chanceMostrada(freshness.chance);
-	scaleMarker.style.left = `${chance}%`;
-	scaleMarker.dataset.value = `${chance}%`;
-	scaleMarker.classList.toggle("near-start", chance < 8);
-	scaleMarker.classList.toggle("near-end", chance > 92);
+	setScaleMarker(scaleMarker, chance);
 	explainChance.textContent = `A chance calculada foi ${chance}%. Abaixo de 40% a fruta é considerada fresca, entre 40% e 70% moderada e acima de 70% passada.`;
 
 	// As 4 medidas que mais pesaram, com barra para os dois lados
@@ -746,16 +880,17 @@ function setConfidence(percent) {
 	confidenceTrack.setAttribute("aria-valuenow", percent);
 }
 
-function setClassBars(avg) {
-	Object.entries(classBars).forEach(([key, [bar, label]]) => {
-		const value = avg ? Math.round(avg[key]) : 0;
-		bar.style.width = `${value}%`;
-		label.textContent = `${value}%`;
-	});
+// Coloca o marcador na régua (0 a 40% fresco, 40 a 70% moderado, 70 a 100% passado)
+function setScaleMarker(marker, chance) {
+	if (!marker) return;
+	marker.style.left = `${chance}%`;
+	marker.dataset.value = `${chance}%`;
+	marker.classList.toggle("near-start", chance < 8);
+	marker.classList.toggle("near-end", chance > 92);
 }
 
 function renderFruitState(fruitKey, freshness, detectionConfidence) {
-	const { state, avg } = freshness;
+	const { state } = freshness;
 	const fruitName = fruitNames[fruitKey];
 
 	// Resposta direta no topo do resultado
@@ -775,7 +910,8 @@ function renderFruitState(fruitKey, freshness, detectionConfidence) {
 	freshnessStatus.textContent = state.label;
 	freshnessStatus.className = `status-fresh ${state.className}`;
 	freshnessReason.textContent = buildReason(freshness);
-	setClassBars(avg);
+	// Uma régua só, com o mesmo número do topo (antes eram 3 barras com outros números)
+	setScaleMarker(resultScaleMarker, chanceMostrada(freshness.chance));
 	setConfidence(detectionConfidence ?? 0);
 	fillExplain(freshness);
 }
@@ -855,10 +991,10 @@ async function carregarFontesDoCartao() {
 	if (!document.fonts?.load) return;
 	try {
 		await Promise.all([
-			document.fonts.load('600 76px "Fraunces"'),
-			document.fonts.load('400 28px "Work Sans"'),
-			document.fonts.load('600 30px "Work Sans"'),
-			document.fonts.load('700 32px "Work Sans"'),
+			document.fonts.load('600 100px "Fraunces"'),
+			document.fonts.load('400 40px "Work Sans"'),
+			document.fonts.load('600 44px "Work Sans"'),
+			document.fonts.load('700 44px "Work Sans"'),
 		]);
 	} catch (error) {
 		console.warn("Fontes não carregaram, o cartão usa a fonte padrão", error);
@@ -867,11 +1003,11 @@ async function carregarFontesDoCartao() {
 
 function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning }) {
 	const W = 1080;
-	const PAD = 60;
+	const PAD = 64;
 	const scale = Math.min(W / photoCanvas.width, 1350 / photoCanvas.height);
 	const photoW = Math.round(photoCanvas.width * scale);
 	const photoH = Math.round(photoCanvas.height * scale);
-	const panelH = 900; // altura máxima; o que sobrar é cortado no fim
+	const panelH = 1500; // altura máxima; o que sobrar é cortado no fim
 
 	const card = document.createElement("canvas");
 	card.width = W;
@@ -890,102 +1026,134 @@ function buildCard({ fruitKey, freshness, detectionConfidence, overlay, warning 
 	ctx.drawImage(photoCanvas, photoX, 0, photoW, photoH);
 	ctx.drawImage(overlay, photoX, 0, photoW, photoH);
 
-	const { state, avg } = freshness;
+	const { state } = freshness;
 	const stateColor = CARD_COLORS[state.className];
-	let y = photoH + 70;
+	// Letras grandes: o cartão aparece com cerca de 1/3 do tamanho no celular
+	let y = photoH + 84;
 
 	// Cabeçalho: marca e data
 	ctx.fillStyle = CARD_COLORS.fresco;
-	ctx.font = serif(30);
+	ctx.font = serif(42);
 	ctx.textAlign = "left";
 	ctx.fillText("Fresh Food", PAD, y);
 	ctx.fillStyle = CARD_COLORS.soft;
-	ctx.font = font(26);
+	ctx.font = font(36);
 	ctx.textAlign = "right";
 	ctx.fillText(new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }), W - PAD, y);
 
 	// Nome da fruta e selo do estado
-	y += 90;
+	y += 116;
 	ctx.textAlign = "left";
 	ctx.fillStyle = CARD_COLORS.text;
-	ctx.font = serif(76);
+	ctx.font = serif(100);
 	const fruitName = fruitNames[fruitKey];
 	ctx.fillText(fruitName, PAD, y);
 	const nameWidth = ctx.measureText(fruitName).width;
 
-	ctx.font = font(32, 700);
+	ctx.font = font(42, 700);
 	const pillText = state.label.toUpperCase();
-	const pillW = ctx.measureText(pillText).width + 48;
-	const pillX = PAD + nameWidth + 32;
+	const pillW = ctx.measureText(pillText).width + 56;
+	const pillX = PAD + nameWidth + 36;
 	ctx.fillStyle = stateColor;
 	ctx.globalAlpha = 0.18;
-	roundRect(ctx, pillX, y - 50, pillW, 62, 31);
+	roundRect(ctx, pillX, y - 66, pillW, 80, 40);
 	ctx.fill();
 	ctx.globalAlpha = 1;
 	ctx.fillStyle = stateColor;
-	ctx.fillText(pillText, pillX + 24, y - 8);
+	ctx.fillText(pillText, pillX + 28, y - 11);
 
-	// Barras das três classes
-	y += 70;
-	const labelX = PAD;
-	const trackX = PAD + 200;
-	const trackW = W - PAD * 2 - 200 - 110;
-	["fresco", "moderado", "passado"].forEach((key) => {
-		const value = Math.round(avg[key]);
-		ctx.fillStyle = CARD_COLORS.text;
-		ctx.font = font(30, 600);
-		ctx.textAlign = "left";
-		ctx.fillText(statusStates[key].label, labelX, y);
-
-		ctx.fillStyle = CARD_COLORS.track;
-		roundRect(ctx, trackX, y - 22, trackW, 20, 10);
-		ctx.fill();
-		if (value > 0) {
-			ctx.fillStyle = CARD_COLORS[key];
-			roundRect(ctx, trackX, y - 22, Math.max(20, (trackW * value) / 100), 20, 10);
-			ctx.fill();
-		}
-
-		ctx.fillStyle = CARD_COLORS.text;
-		ctx.font = font(30, 700);
-		ctx.textAlign = "right";
-		ctx.fillText(`${value}%`, W - PAD, y);
-		y += 58;
-	});
-
-	// Motivo e dica de uso
-	y += 20;
+	// Régua com a chance de estar estragada (o mesmo número do resultado na tela)
+	const chance = chanceMostrada(freshness.chance);
+	y += 92;
 	ctx.textAlign = "left";
 	ctx.fillStyle = CARD_COLORS.soft;
-	ctx.font = font(28);
-	y += drawWrappedText(ctx, buildReason(freshness), PAD, y, W - PAD * 2, 40);
+	ctx.font = font(36);
+	ctx.fillText("Chance de estar estragada", PAD, y);
 
-	y += 20;
+	const scaleX = PAD;
+	const scaleW = W - PAD * 2;
+	const scaleH = 72;
+	const scaleY = y + 96; // espaço em cima para o número
+	const zonas = [
+		["fresco", 0, 40],
+		["moderado", 40, 70],
+		["passado", 70, 100],
+	];
+	ctx.save();
+	roundRect(ctx, scaleX, scaleY, scaleW, scaleH, 12);
+	ctx.clip();
+	zonas.forEach(([key, de, ate]) => {
+		ctx.fillStyle = CARD_COLORS[key];
+		ctx.globalAlpha = 0.18;
+		ctx.fillRect(scaleX + (scaleW * de) / 100, scaleY, (scaleW * (ate - de)) / 100, scaleH);
+		ctx.globalAlpha = 1;
+	});
+	ctx.restore();
+	ctx.font = font(34, 600);
+	ctx.textAlign = "center";
+	zonas.forEach(([key, de, ate]) => {
+		ctx.fillStyle = CARD_COLORS[key];
+		ctx.fillText(statusStates[key].label, scaleX + (scaleW * (de + ate)) / 200, scaleY + scaleH / 2 + 12);
+	});
+
+	// Marcador e o número em cima dele
+	const markX = scaleX + (scaleW * chance) / 100;
 	ctx.fillStyle = CARD_COLORS.text;
-	ctx.font = font(32, 600);
-	y += drawWrappedText(ctx, state.tips[fruitKey], PAD, y, W - PAD * 2, 44);
+	roundRect(ctx, markX - 3, scaleY - 12, 6, scaleH + 24, 3);
+	ctx.fill();
+	const numero = `${chance}%`;
+	ctx.font = font(40, 700);
+	const bolhaW = ctx.measureText(numero).width + 32;
+	const bolhaX = Math.min(Math.max(markX - bolhaW / 2, scaleX), scaleX + scaleW - bolhaW);
+	roundRect(ctx, bolhaX, scaleY - 76, bolhaW, 56, 10);
+	ctx.fill();
+	ctx.fillStyle = CARD_COLORS.background;
+	ctx.fillText(numero, bolhaX + bolhaW / 2, scaleY - 34);
 
-	// Rodapé: certeza da detecção, legenda e aviso de luz
-	y += 30;
+	// Marcas de 0, 40, 70 e 100%
 	ctx.fillStyle = CARD_COLORS.soft;
-	ctx.font = font(24);
+	ctx.font = font(30);
+	[0, 40, 70, 100].forEach((v) => {
+		ctx.textAlign = v === 0 ? "left" : v === 100 ? "right" : "center";
+		ctx.fillText(`${v}%`, scaleX + (scaleW * v) / 100, scaleY + scaleH + 52);
+	});
+	y = scaleY + scaleH + 52 + 70;
+
+	// Motivo e dica de uso
+	y += 24;
+	ctx.textAlign = "left";
+	ctx.fillStyle = CARD_COLORS.soft;
+	ctx.font = font(40);
+	y += drawWrappedText(ctx, buildReason(freshness), PAD, y, W - PAD * 2, 56);
+
+	y += 30;
+	ctx.fillStyle = CARD_COLORS.text;
+	ctx.font = font(44, 600);
+	y += drawWrappedText(ctx, state.tips[fruitKey], PAD, y, W - PAD * 2, 60);
+
+	// Rodapé: certeza da detecção e, embaixo, a legenda das cores
+	y += 36;
+	ctx.fillStyle = CARD_COLORS.soft;
+	ctx.font = font(36);
 	ctx.fillText(detectionConfidence === null ? "Fruta escolhida no botão" : `Certeza de que é ${fruitName.toLowerCase()}: ${detectionConfidence}%`, PAD, y);
+
+	y += 62;
+	const box = 30;
 	ctx.strokeStyle = CARD_COLORS.accent;
-	ctx.lineWidth = 3;
-	ctx.textAlign = "right";
-	ctx.fillText("Fruta encontrada        Manchas e mofo", W - PAD, y);
-	const legendW = ctx.measureText("Fruta encontrada        Manchas e mofo").width;
-	const spotsW = ctx.measureText("Manchas e mofo").width;
-	ctx.strokeRect(W - PAD - legendW - 30, y - 20, 20, 20);
+	ctx.lineWidth = 4;
+	ctx.strokeRect(PAD + 2, y - box + 2, box - 4, box - 4);
+	ctx.fillText("Fruta encontrada", PAD + box + 16, y);
+	const spotsX = PAD + box + 16 + ctx.measureText("Fruta encontrada").width + 48;
 	ctx.fillStyle = "rgba(255, 64, 64, 0.8)";
-	ctx.fillRect(W - PAD - spotsW - 30, y - 20, 20, 20);
+	ctx.fillRect(spotsX, y - box, box, box);
+	ctx.fillStyle = CARD_COLORS.soft;
+	ctx.fillText("Manchas e mofo", spotsX + box + 16, y);
 
 	if (warning) {
-		y += 50;
-		ctx.textAlign = "left";
+		y += 70;
 		ctx.fillStyle = CARD_COLORS.moderado;
-		ctx.font = font(26, 600);
-		y += drawWrappedText(ctx, warning, PAD, y, W - PAD * 2, 36) - 36;
+		ctx.font = font(38, 600);
+		y += drawWrappedText(ctx, warning, PAD, y, W - PAD * 2, 52) - 52;
 	}
 
 	// Corta o espaço que sobrou embaixo
@@ -1071,6 +1239,27 @@ function pickPrediction(predictions) {
 		.sort((a, b) => b.score - a.score)[0];
 }
 
+// Outras frutas encostadas ou por cima da fruta analisada (ex.: banca do supermercado).
+// Elas entram na caixa e misturam o resultado. Fruta longe não atrapalha, então não conta.
+const MIN_SCORE_OUTRA_FRUTA = 0.4;
+const AVISO_VARIAS_FRUTAS = "Apareceu mais de uma fruta junto. Para um resultado melhor, segure uma fruta só na mão, longe das outras.";
+function outrasFrutasJunto(predictions, escolhida) {
+	if (!escolhida) return 0;
+	const [x, y, w, h] = escolhida.bbox;
+	return predictions.filter((p) => {
+		if (p === escolhida || !(p.class in fruitNames) || p.score < MIN_SCORE_OUTRA_FRUTA) return false;
+		const [px, py, pw, ph] = p.bbox;
+		const ix = Math.max(0, Math.min(x + w, px + pw) - Math.max(x, px));
+		const iy = Math.max(0, Math.min(y + h, py + ph) - Math.max(y, py));
+		const inter = ix * iy;
+		// a mesma fruta detectada duas vezes (caixas quase iguais) não conta
+		const uniao = w * h + pw * ph - inter;
+		if (inter / uniao > 0.6) return false;
+		// conta se pelo menos 10% da outra fruta está dentro da caixa analisada
+		return inter > 0.1 * pw * ph;
+	}).length;
+}
+
 function fruitWanted() {
 	return !selectedMode || selectedMode === "auto" ? "banana, maçã ou laranja" : fruitNames[selectedMode].toLowerCase();
 }
@@ -1090,6 +1279,18 @@ function showNotice(message) {
 	}
 }
 
+// Maçã ou laranja: se a cor da casca discorda do detector com força, avisa (não troca sozinho).
+// Só vale quando a pessoa deixou o app escolher a fruta.
+function avisoMacaLaranja(fruitKey, freshness) {
+	if (selectedMode && selectedMode !== "auto") return null;
+	if (fruitKey !== "apple" && fruitKey !== "orange") return null;
+	const laranja = chanceLaranjaPelaCor(freshness.corFruta);
+	const outra = fruitKey === "apple" ? laranja : 1 - laranja;
+	if (outra < COR_FRUTA_AVISO) return null;
+	const nome = fruitKey === "apple" ? "laranja" : "maçã";
+	return `Pela cor, esta fruta parece mais uma ${nome}. Se for, toque na ${nome} lá em cima e analise de novo.`;
+}
+
 async function analyzePhoto() {
 	await ensureDetector();
 
@@ -1099,6 +1300,16 @@ async function analyzePhoto() {
 	const t1 = performance.now();
 	let prediction = pickPrediction(predictions);
 	let manual = false;
+
+	// Se a pessoa escolheu a fruta no botão e o detector achou outra fruta no lugar
+	// (ex.: chamou a maçã de laranja), usa a caixa que ele achou, com a fruta escolhida
+	if (!prediction && selectedMode && selectedMode !== "auto") {
+		const outra = predictions.filter((p) => p.class in fruitNames).sort((a, b) => b.score - a.score)[0];
+		if (outra) {
+			prediction = { class: selectedMode, score: outra.score, bbox: outra.bbox };
+			manual = true;
+		}
+	}
 
 	if (!prediction) {
 		// Se a pessoa escolheu a fruta no botão, analisa o centro da foto mesmo assim
@@ -1123,7 +1334,10 @@ async function analyzePhoto() {
 	freshness.timing = { deteccao: t1 - t0, analise: t2 - t1 };
 	const detectionConfidence = manual ? null : Math.round(prediction.score * 100);
 	const warnings = [sharpnessMessage(freshness.sharpness), outlierMessage(freshness), lightMessage(freshness.avg.brightness)];
-	if (manual) warnings.push("A fruta não foi localizada automaticamente: foi analisado o centro da foto.");
+	if (manual && prediction.score === 0) warnings.push("A fruta não foi localizada automaticamente: foi analisado o centro da foto.");
+	if (outrasFrutasJunto(predictions, prediction)) warnings.push(AVISO_VARIAS_FRUTAS);
+	const avisoCor = avisoMacaLaranja(fruitKey, freshness);
+	if (avisoCor) warnings.push(avisoCor);
 	const warning = warnings.filter(Boolean).join(" ") || null;
 
 	renderFruitState(fruitKey, freshness, detectionConfidence);
@@ -1218,7 +1432,8 @@ async function detectLive() {
 		if (prediction) {
 			missCount = 0;
 			drawBox(prediction);
-			setLiveHint(`${fruitNames[prediction.class]} encontrada! Pode fotografar.`, true);
+			if (outrasFrutasJunto(predictions, prediction)) setLiveHint(AVISO_VARIAS_FRUTAS);
+			else setLiveHint(`${fruitNames[prediction.class]} encontrada! Pode fotografar.`, true);
 		} else {
 			missCount++;
 			if (missCount >= MAX_MISSES) {

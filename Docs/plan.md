@@ -228,7 +228,7 @@ Uma coluna, nesta ordem:
 
 - `sw.js` (service worker) guarda o site, as bibliotecas (`Js/vendor/tf.min.js` e `Js/vendor/coco-ssd.min.js`), as imagens e o modelo COCO-SSD.
 - `manifest.webmanifest` permite instalar o app, com os ícones de `IMG/icones/`.
-- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v16`). Sem isso, quem já abriu o site continua vendo a versão antiga.
+- **Importante:** a cada mudança em qualquer arquivo do site, aumentar o número em `VERSAO` no início do `sw.js` (versão atual: `fresh-food-v21`). Sem isso, quem já abriu o site continua vendo a versão antiga.
 
 ---
 
@@ -244,7 +244,7 @@ Uma coluna, nesta ordem:
 | `sw.js` | Service worker (uso sem internet) |
 | `manifest.webmanifest` | Dados para instalar o app |
 | `IMG/passos/` | Imagens do cartão dos 3 passos |
-| `IMG/icones/` | Ícones do app instalado |
+| `IMG/icones/` | Ícones do app instalado e os globos de com internet (`com-internet.png`) e sem internet (`sem-internet.png`) |
 | `Docs/treino/` | Scripts de treino e avaliação, métricas e README |
 | `Docs/plan.md` | Este documento |
 
@@ -257,7 +257,8 @@ Uma coluna, nesta ordem:
 - **Maçã amarela** tende a sair como passada (a cor viva da maçã cobre só vermelho e verde).
 - **Laranja** que apodrece mantendo a cor laranja engana o modelo.
 - O modelo só vê a casca: não percebe cheiro, firmeza nem o interior da fruta.
-- **Fundo escuro** atrapalha: num teste trocando o fundo branco das fotos por um pano escuro, o acerto nas frutas frescas caiu de 100% para 72%, porque o fundo que entra na área oval conta como "partes muito escuras". Fundo cinza, madeira ou verde quase não afetaram. Pela mesma razão, na banana (comprida) parte do fundo claro pode contar como "acinzentado".
+- **Fundo:** desde a v20 o fundo ligado à borda da caixa é separado antes da análise (seção 15). Com fundos artificiais o acerto ficou entre 91% e 95%, mas ainda falta confirmar com fotos reais. Fruta muito escura em fundo escuro continua difícil.
+- **Maçã x laranja:** o detector às vezes troca as duas. O site avisa quando a cor discorda, mas não troca sozinho.
 
 ---
 
@@ -267,7 +268,7 @@ Uma coluna, nesta ordem:
 - [ ] Confirmar o funcionamento sem internet num celular (modo avião)
 - [ ] Decidir o modo escuro (automático, sempre claro ou botão)
 - [ ] Definir a função do botão + (adicionar outras frutas)
-- [ ] Fazer o sistema ignorar a cor do fundo nas bordas do recorte e treinar de novo
+- [x] Fazer o sistema ignorar a cor do fundo nas bordas do recorte e treinar de novo (v20)
 - [ ] Incluir a faixa do amarelo para maçã e treinar de novo
 - [ ] Medir o tempo de análise em pelo menos três celulares
 
@@ -294,3 +295,72 @@ Correções feitas depois da revisão geral do projeto:
 | Alguns textos com 11 a 12 px | Nenhum texto menor que cerca de 13 px |
 | Cartão para baixar podia sair com fonte padrão | Cartão espera as fontes antes de ser desenhado |
 | Títulos e botões sem ajuste fino | Títulos mais justos, botões e números mais firmes, linhas com mais espaço |
+
+## 12. Ícones de internet no botão "Uso sem internet" (v17)
+
+- **Com internet e pronto:** globo verde (`IMG/icones/com-internet.png`).
+- **Sem internet:** globo laranja riscado (`IMG/icones/sem-internet.png`).
+- Enquanto prepara, continua o círculo girando; se o navegador não permite, continua o ícone de aviso.
+- No computador, o texto do botão fica numa linha só.
+
+## 13. Letras maiores no cartão do resultado (v18)
+
+O cartão (foto com as informações embaixo) é desenhado com 1080 px de largura, mas no celular aparece com cerca de 1/3 disso. As letras ficavam com 8 a 10 px na tela.
+
+| Parte | Antes | Agora |
+|---|---|---|
+| Nome da fruta | 76 | 100 |
+| Fresco, Moderado, Passado e porcentagens | 30 | 44 |
+| Explicação da casca | 28 | 40 |
+| Dica de consumo | 32 | 44 |
+| Certeza e legenda | 24 | 36 (legenda numa linha própria) |
+| Aviso de foto tremida ou luz | 26 | 38 |
+
+- No computador, o cartão passou de no máximo 560 px de altura para 640 px de largura, então as letras aparecem quase com o dobro do tamanho.
+- O arquivo baixado também sai com as letras maiores.
+
+## 14. Um número só para a chance de estar estragada (v19)
+
+Antes o resultado mostrava dois números diferentes, o que parecia erro. Por exemplo: "Passado 98%" nas barras e "Chance de estar estragada: 88%" no texto. As três barras mostravam o quanto a chance estava perto de cada estado, e não a chance em si.
+
+- As três barras (Fresco, Moderado, Passado) saíram, no cartão e na tela.
+- No lugar entrou uma régua: de 0 a 40% é Fresco, de 40 a 70% é Moderado e de 70 a 100% é Passado. Um marcador mostra a chance calculada.
+- O mesmo número aparece no topo do resultado, na régua da tela, na régua do cartão e na explicação.
+- O texto da casca não repete mais a chance no final.
+- Análises antigas do histórico continuam com o cartão antigo, porque a imagem já foi guardada pronta.
+
+## 15. Revisão do modelo: separar o fundo (v20)
+
+O que mudou na análise:
+
+- **O fundo sai da conta.** As cores dos cantos da caixa são tratadas como fundo, e os pontos com essa cor ligados à borda são ignorados. Mancha no meio da fruta continua contando, porque não está ligada à borda.
+- **Textura mais justa.** A textura só compara pontos vizinhos que são os dois da fruta.
+- **Modelo treinado de novo** com essas medidas (os números novos estão no `Js/escript.js`).
+- **Aviso de maçã x laranja.** Se a cor da casca discorda do detector com 90% de certeza ou mais, aparece: "Pela cor, esta fruta parece mais uma maçã. Se for, toque na maçã lá em cima e analise de novo." O site não troca a fruta sozinho, porque o teste pela cor acerta 85% e o detector costuma acertar mais.
+- **Fruta escolhida no botão.** Se a pessoa escolheu "Maçã" e o detector achou uma "laranja", o site usa a caixa que o detector achou (antes analisava só o centro da foto).
+
+Acerto com fundos diferentes (570 fotos de validação, fundo trocado por código):
+
+| Fundo | Antes (v19) | Agora (v20) |
+|---|---|---|
+| Branco | 94,7% | 95,3% |
+| Madeira | 72,5% | 91,2% |
+| Pano escuro | 81,1% | 91,4% |
+| Mesa cinza | 89,1% | 92,5% |
+| Pano verde | 92,1% | 95,1% |
+| Bege | 95,1% | 95,4% |
+| **Média** | **87,4%** | **93,5%** |
+
+- O JavaScript do site dá a mesma resposta do Python em 98,7% das fotos testadas.
+- A análise da cor leva cerca de 9 ms no computador (a detecção da fruta continua sendo a parte mais demorada).
+- Detalhes, scripts e todos os números: `Docs/treino/README.md`.
+
+## 16. Aviso de várias frutas juntas (v21)
+
+Pensado para o uso no supermercado, onde a fruta pode estar na banca, encostada em outras.
+
+- Quando o detector acha outra fruta encostada ou por cima da fruta analisada, aparece: "Apareceu mais de uma fruta junto. Para um resultado melhor, segure uma fruta só na mão, longe das outras."
+- O aviso aparece na câmera (no lugar de "Pode fotografar") e no resultado (também no cartão).
+- Só contam frutas com pelo menos 40% de certeza do detector e com pelo menos 10% delas dentro da caixa analisada. Uma fruta longe não mistura o resultado, então não gera aviso.
+- A mesma fruta detectada duas vezes (caixas quase iguais) não conta como duas.
+- Limite: um cacho de bananas costuma ser detectado como uma banana só, então nesse caso o aviso não aparece.

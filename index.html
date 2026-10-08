@@ -65,9 +65,9 @@
                             <span id="offline-pill-hint" class="offline-pill-hint">Deixe a internet ligada por alguns segundos</span>
                         </span>
                         <span class="offline-pill-icon" aria-hidden="true">
-                            <svg class="op-ready" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16.2 9.5"/></svg>
+                            <img class="op-ready" src="./IMG/icones/com-internet.png" alt="" width="44" height="44">
                             <svg class="op-preparing" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
-                            <svg class="op-offline" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 8.6A6 6 0 0 0 6 13.5a4 4 0 0 0 1 7.5h10.5M12 6.5a6 6 0 0 1 6 6 4 4 0 0 1 2 6.8"/></svg>
+                            <img class="op-offline" src="./IMG/icones/sem-internet.png" alt="" width="44" height="44">
                             <svg class="op-off" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
                         </span>
                     </button>
@@ -158,22 +158,16 @@
                             </div>
 
                             <div class="class-bars">
-                                <span class="result-label">Quão perto está de cada estado</span>
-                                <div class="class-row">
-                                    <span class="class-name">Fresco</span>
-                                    <div class="class-track"><span id="bar-fresco" class="bar-fresco"></span></div>
-                                    <strong id="pct-fresco">0%</strong>
+                                <span class="result-label">Chance de estar estragada</span>
+                                <div class="explain-scale">
+                                    <div class="scale-zones" aria-hidden="true">
+                                        <span class="zone-fresco">Fresco</span>
+                                        <span class="zone-moderado">Moderado</span>
+                                        <span class="zone-passado">Passado</span>
+                                    </div>
+                                    <span id="result-scale-marker" class="scale-marker"></span>
                                 </div>
-                                <div class="class-row">
-                                    <span class="class-name">Moderado</span>
-                                    <div class="class-track"><span id="bar-moderado" class="bar-moderado"></span></div>
-                                    <strong id="pct-moderado">0%</strong>
-                                </div>
-                                <div class="class-row">
-                                    <span class="class-name">Passado</span>
-                                    <div class="class-track"><span id="bar-passado" class="bar-passado"></span></div>
-                                    <strong id="pct-passado">0%</strong>
-                                </div>
+                                <div class="scale-ticks" aria-hidden="true"><span>0%</span><span>40%</span><span>70%</span><span>100%</span></div>
                                 <p id="freshness-reason" class="freshness-reason">O motivo do resultado aparece aqui.</p>
                             </div>
 

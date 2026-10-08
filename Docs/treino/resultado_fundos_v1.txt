@@ -1,0 +1,8 @@
+Modelo v1 (até a v19 do site), mesmo teste de fundos:
+fundo          banana    apple   orange    geral  frescas  estrag.
+branco          99.0%    93.1%    91.9%    94.7%    97.7%    91.2%
+madeira         71.4%    52.9%    90.9%    72.5%    54.0%    94.3%
+pano_escuro     68.8%    85.6%    89.3%    81.1%    76.1%    87.0%
+cinza           91.0%    90.8%    85.8%    89.1%    87.4%    91.2%
+verde           95.0%    89.7%    91.4%    92.1%    95.8%    87.7%
+bege           100.0%    93.1%    91.9%    95.1%    97.4%    92.3%

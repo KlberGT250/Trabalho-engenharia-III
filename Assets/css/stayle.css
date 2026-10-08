@@ -1845,9 +1845,17 @@ body.camera-open {
 	stroke-linejoin: round;
 }
 
-.offline-pill.is-ready .offline-pill-icon { background: var(--success-soft); color: var(--success); }
+.offline-pill-icon img {
+	display: none;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+/* Com internet (globo verde) e sem internet (globo laranja riscado): a imagem já tem a cor */
+.offline-pill.is-ready .offline-pill-icon,
+.offline-pill.is-offline .offline-pill-icon { background: none; border-radius: 0; }
 .offline-pill.is-preparing .offline-pill-icon { background: var(--neutral); color: var(--text-soft); }
-.offline-pill.is-offline .offline-pill-icon { background: var(--warning-soft); color: var(--warning); }
 .offline-pill.is-off .offline-pill-icon { background: var(--neutral); color: var(--text-soft); }
 
 .offline-pill.is-ready .op-ready,
@@ -2150,6 +2158,7 @@ body.camera-open {
 		flex-direction: row;
 		align-items: baseline;
 		gap: 0.4rem;
+		white-space: nowrap;
 	}
 
 	.offline-pill-label {
@@ -2279,11 +2288,9 @@ body.camera-open {
 		max-width: none;
 	}
 
-	/* Foto do resultado não fica gigante na tela do computador */
+	/* Cartão do resultado no computador: largo o bastante para ler as letras */
 	.result-card {
-		max-height: 560px;
-		width: auto;
-		max-width: 100%;
+		width: min(100%, 640px);
 		margin: 0 auto;
 	}
 
